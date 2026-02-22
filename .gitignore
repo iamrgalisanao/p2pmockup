@@ -1,0 +1,56 @@
+# ============================================================
+# P2P Procurement System — .gitignore
+# ============================================================
+
+# Secrets — NEVER commit
+.env
+*.env.local
+*.env.production
+*.pem
+*.key
+
+# Ephemeral workbench
+.tmp/
+*.tmp
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node / Frontend
+node_modules/
+.next/
+out/
+dist/
+.nuxt/
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Generated files (tracked separately in storage)
+*.pdf
+*.xlsx
