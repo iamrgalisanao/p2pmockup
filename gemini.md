@@ -34,7 +34,7 @@
 ---
 
 ## 🎯 North Star
-> A single, mobile-friendly procurement system that turns a **requisition** into an **approved PO/JO + Notice to Award** — with full audit trail, required documents, and correct routing — **end-to-end**.
+> A single, webapp and mobile-friendly procurement system that turns a **requisition** into an **approved PO/JO + Notice to Award** — with full audit trail, required documents, and correct routing — **end-to-end**.
 
 ---
 
