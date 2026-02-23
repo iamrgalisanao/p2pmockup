@@ -408,9 +408,9 @@ const RequisitionDetailPage = () => {
                                         <th style={{ minWidth: '250px' }}>Description / Line Item</th>
                                         <th style={{ width: '80px' }}>Qty</th>
                                         {r.quotes?.map(q => (
-                                            <th key={q.id} style={{ textAlign: 'center', background: q.is_awarded ? '#f0fdf4' : 'transparent' }}>
-                                                <div style={{ fontSize: '0.875rem' }}>{q.vendor.name}</div>
-                                                <div style={{ fontSize: '1.1rem', fontWeight: 900 }}>PHP {parseFloat(q.grand_total).toLocaleString()}</div>
+                                            <th key={q.id} style={{ textAlign: 'center', background: q.is_awarded ? 'rgba(16, 185, 129, 0.1)' : 'transparent', border: q.is_awarded ? '1px solid var(--success)' : 'none' }}>
+                                                <div style={{ fontSize: '0.875rem', color: q.is_awarded ? 'var(--success)' : 'var(--text-muted)' }}>{q.vendor.name}</div>
+                                                <div style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--text-dark)' }}>PHP {parseFloat(q.grand_total).toLocaleString()}</div>
                                             </th>
                                         ))}
                                     </tr>
@@ -528,21 +528,22 @@ const RequisitionDetailPage = () => {
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                             <div style={{
                                                 width: 40, height: 40, borderRadius: '50%',
-                                                background: step.action === 'approved' ? 'var(--success)' : (step.action === 'pending' ? 'var(--warning)' : '#e2e8f0'),
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white'
+                                                background: step.action === 'approved' ? 'var(--success)' : (step.action === 'pending' ? 'var(--warning)' : 'rgba(255,255,255,0.05)'),
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', color: step.action === 'approved' || step.action === 'pending' ? '#000' : 'var(--text-muted)',
+                                                border: step.action === 'pending' ? 'none' : '1px solid var(--border)'
                                             }}>
                                                 {step.action === 'approved' ? <CheckCircle size={20} /> : <span>{step.step_number}</span>}
                                             </div>
-                                            {idx < r.approval_steps.length - 1 && <div style={{ width: 2, flex: 1, background: '#e2e8f0', margin: '4px 0' }} />}
+                                            {idx < r.approval_steps.length - 1 && <div style={{ width: 2, flex: 1, background: 'var(--border)', margin: '4px 0' }} />}
                                         </div>
                                         <div style={{ flex: 1, paddingBottom: '1rem' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <div style={{ fontWeight: 700 }}>{step.step_label}</div>
+                                                <div style={{ fontWeight: 700, color: 'var(--text-dark)' }}>{step.step_label}</div>
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{step.actioned_at ? new Date(step.actioned_at).toLocaleString() : 'Pending'}</div>
                                             </div>
                                             <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Required: {step.role_required.replace('_', ' ').toUpperCase()}</div>
                                             {step.comment && (
-                                                <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: 8, marginTop: '0.5rem', fontStyle: 'italic', fontSize: '0.8125rem' }}>
+                                                <div style={{ background: 'rgba(255,255,255,0.02)', padding: '0.75rem', borderRadius: 8, marginTop: '0.75rem', fontStyle: 'italic', fontSize: '0.8125rem', borderLeft: '3px solid var(--primary)', color: 'var(--text-muted)' }}>
                                                     &quot;{step.comment}&quot;
                                                 </div>
                                             )}
@@ -606,7 +607,7 @@ const RequisitionDetailPage = () => {
                             </div>
 
                             {r.attachments?.length === 0 ? (
-                                <div style={{ padding: '3rem', textAlign: 'center', background: '#f8fafc', borderRadius: 12, color: 'var(--text-muted)' }}>
+                                <div style={{ padding: '3rem', textAlign: 'center', background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--border)', borderRadius: 12, color: 'var(--text-muted)' }}>
                                     No attachments found. Please upload required documents (PR Form, Quotes, etc.)
                                 </div>
                             ) : (
@@ -638,12 +639,12 @@ const RequisitionDetailPage = () => {
                             <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem' }}>AUDIT TRAIL</h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {r.audit_logs?.map((log, i) => (
-                                    <div key={i} style={{ display: 'flex', gap: '1rem', padding: '1rem', borderLeft: '3px solid var(--primary)', background: '#f8fafc', borderRadius: '0 8px 8px 0' }}>
+                                    <div key={i} style={{ display: 'flex', gap: '1rem', padding: '1rem', borderLeft: '3px solid var(--primary)', background: 'rgba(255,255,255,0.02)', borderRadius: '0 8px 8px 0' }}>
                                         <div style={{ flex: 1 }}>
-                                            <div style={{ fontWeight: 700, fontSize: '0.875rem' }}>{log.event.replace(/_/g, ' ').toUpperCase()}</div>
+                                            <div style={{ fontWeight: 700, fontSize: '0.875rem', color: 'var(--primary)', letterSpacing: '0.5px' }}>{log.event?.replace(/_/g, ' ').toUpperCase() || 'UNKNOWN EVENT'}</div>
                                             <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{log.description || `Performed by ${log.user?.name || 'System'}`}</div>
                                         </div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textAlign: 'right' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--secondary)', textAlign: 'right' }}>
                                             {new Date(log.created_at).toLocaleString()}
                                         </div>
                                     </div>
@@ -679,13 +680,13 @@ const RequisitionDetailPage = () => {
                             <History size={18} color="var(--primary)" />
                             SLA Status
                         </h3>
-                        <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: 12 }}>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                        <div style={{ padding: '1.25rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 600, display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)' }}>
                                 <span>PR AGE</span>
-                                <span>Active</span>
+                                <span style={{ color: 'var(--primary)' }}>Active</span>
                             </div>
-                            <div style={{ height: 6, background: '#e2e8f0', borderRadius: 3, margin: '8px 0' }}>
-                                <div style={{ width: '40%', height: '100%', background: 'var(--primary)', borderRadius: 3 }} />
+                            <div style={{ height: 6, background: 'rgba(255,255,255,0.05)', borderRadius: 3, margin: '12px 0' }}>
+                                <div style={{ width: '40%', height: '100%', background: 'var(--primary)', borderRadius: 3, boxShadow: 'var(--shadow-glow)' }} />
                             </div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Deadline: Pending Review</div>
                         </div>

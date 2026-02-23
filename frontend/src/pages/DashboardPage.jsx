@@ -25,10 +25,10 @@ const DashboardPage = () => {
     });
 
     const cards = [
-        { label: 'Active Drafts', value: stats?.draft || 0, icon: FileText, color: '#6366f1', bg: '#e0e7ff' },
-        { label: 'In Approval', value: stats?.pending || 0, icon: Clock, color: '#f59e0b', bg: '#fef3c7' },
-        { label: 'Completed', value: stats?.po_issued || 0, icon: CheckCircle2, color: '#10b981', bg: '#d1fae5' },
-        { label: 'SLA Breached', value: stats?.sla_breached || 0, icon: AlertTriangle, color: '#f43f5e', bg: '#fee2e2' },
+        { label: 'Active Drafts', value: stats?.draft || 0, icon: FileText, color: 'var(--primary)', bg: 'rgba(129, 140, 248, 0.15)' },
+        { label: 'In Approval', value: stats?.pending || 0, icon: Clock, color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)' },
+        { label: 'Completed', value: stats?.po_issued || 0, icon: CheckCircle2, color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)' },
+        { label: 'SLA Breached', value: stats?.sla_breached || 0, icon: AlertTriangle, color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)' },
     ];
 
     return (
@@ -116,16 +116,16 @@ const DashboardPage = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                         {stats?.inbox_count === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '2rem', background: '#f8fafc', borderRadius: 12 }}>
-                                <CheckCircle2 size={32} color="#10b981" style={{ margin: '0 auto 1rem' }} />
-                                <div style={{ fontWeight: 600 }}>All Clear!</div>
+                            <div style={{ textAlign: 'center', padding: '2rem', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid var(--border)' }}>
+                                <CheckCircle2 size={32} color="var(--success)" style={{ margin: '0 auto 1rem' }} />
+                                <div style={{ fontWeight: 600, color: 'var(--text-dark)' }}>All Clear!</div>
                                 <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>No pending approvals for your role.</div>
                             </div>
                         ) : (
-                            <div style={{ background: '#fef3c7', padding: '1rem', borderRadius: 12, borderLeft: '4px solid #f59e0b' }}>
-                                <div style={{ fontWeight: 700, color: '#92400e' }}>{stats?.inbox_count} Pending Steps</div>
-                                <div style={{ fontSize: '0.8125rem', color: '#92400e', marginBottom: '0.75rem' }}>You have tasks requiring your review.</div>
-                                <button className="btn btn-primary" style={{ background: '#f59e0b', width: '100%', fontSize: '0.75rem' }} onClick={() => navigate('/inbox')}>
+                            <div style={{ background: 'rgba(245, 158, 11, 0.1)', padding: '1rem', borderRadius: 12, borderLeft: '4px solid var(--warning)' }}>
+                                <div style={{ fontWeight: 700, color: 'var(--warning)' }}>{stats?.inbox_count} Pending Steps</div>
+                                <div style={{ fontSize: '0.8125rem', color: 'rgba(245,158,11,0.8)', marginBottom: '0.75rem' }}>You have tasks requiring your review.</div>
+                                <button className="btn btn-primary" style={{ background: 'var(--warning)', width: '100%', fontSize: '0.75rem', color: '#000' }} onClick={() => navigate('/inbox')}>
                                     Open Inbox
                                 </button>
                             </div>
