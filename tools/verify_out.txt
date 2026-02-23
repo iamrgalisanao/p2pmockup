@@ -1,0 +1,12 @@
+--- Starting Workflow Verification ---
+Requester Logged In: James Requester
+Requisition Created (Draft): PR-20260223-699c03f70ea25
+Requisition Submitted. New Status: submitted
+Pending Step: Department Head Approval for dept_head
+Step Approved. PR Status: approved
+3 Vendor Quotes Added.
+Lowest Quote ID: 6f166c96-da62-4434-84bd-3672e206ddb7 - SafePath Safety Gear
+Vendor Awarded. NTA Ref: NTA-2026-lhQtJ
+Requisition Status: awarded
+NTA marked as sent. PR Status: awarded
+--- Workflow Verification SUCCESS ---

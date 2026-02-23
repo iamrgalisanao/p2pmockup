@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api from '../../services/api';
+import { requisitionService } from '../../services/requisitionService';
+import { reportService } from '../../services/reportService';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
@@ -11,7 +12,6 @@ import {
     Download
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { API_BASE_URL } from '../../services/api';
 
 const RequisitionListPage = () => {
     const navigate = useNavigate();
@@ -21,24 +21,12 @@ const RequisitionListPage = () => {
 
     const { data, isLoading } = useQuery({
         queryKey: ['requisitions', page, status, search],
-        queryFn: () => api.get('/requisitions', {
-            params: { page, status, search }
-        }).then(res => res.data),
+        queryFn: () => requisitionService.getAll({ page, status, search }).then(res => res.data),
     });
 
     const handleExport = () => {
         const token = useAuthStore.getState().token;
-
-        // Ultimate fallback strategy
-        let baseUrl = API_BASE_URL || window.__P2P_API_URL || 'http://localhost:8000/api';
-        if (baseUrl === 'undefined' || !baseUrl.startsWith('http')) {
-            baseUrl = 'http://localhost:8000/api';
-        }
-
-        console.log('--- EXPORT CLICKED ---');
-        console.log('Final baseUrl:', baseUrl);
-
-        const finalUrl = `${baseUrl}/reports/export?token=${token}`;
+        const finalUrl = `http://localhost:8000/api/reports/export?token=${token}`;
         window.open(finalUrl, '_blank');
     };
 

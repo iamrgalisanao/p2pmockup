@@ -160,4 +160,16 @@ class Requisition extends Model
             ->where('is_compliant', true)
             ->count();
     }
+
+    /**
+     * Get the lowest responsive quote.
+     */
+    public function lowestQuote(): ?VendorQuote
+    {
+        return $this->quotes()
+            ->where('is_complete', true)
+            ->where('is_compliant', true)
+            ->orderBy('grand_total', 'asc')
+            ->first();
+    }
 }

@@ -13,6 +13,10 @@ return new class extends Migration {
                 'dept_head',
                 'proc_officer',
                 'finance_reviewer',
+                'president',
+                'accounting_staff',
+                'accounting_supervisor',
+                'accounting_manager',
                 'admin',
             ])->default('requester')->after('email');
             $table->char('department_id', 36)->nullable()->after('role');
