@@ -197,17 +197,17 @@ const RequisitionFormPage = () => {
 
     return (
         <div className="form-view animate-fade-in">
-            <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="form-header" style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => navigate(-1)}>
                     <ArrowLeft size={18} />
                 </button>
                 <div>
                     <h1 style={{ fontSize: '1.75rem' }}>{isEdit ? 'Edit Requisition' : 'Create New Requisition'}</h1>
-                    <p style={{ color: 'var(--text-muted)' }}>Fill in the details for your procurement request.</p>
+                    <p className="desktop-only" style={{ color: 'var(--text-muted)' }}>Fill in the details for your procurement request.</p>
                 </div>
                 <button
                     type="button"
-                    className="btn btn-outline"
+                    className="btn btn-outline desktop-only"
                     style={{ marginLeft: 'auto', gap: 8, borderColor: 'var(--primary)', color: 'var(--primary)' }}
                     onClick={() => setShowWiki(!showWiki)}
                 >
@@ -219,7 +219,7 @@ const RequisitionFormPage = () => {
             <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
                 <div style={{ flex: 1 }}>
                     {/* Progress Bar */}
-                    <div style={{
+                    <div className="stepper-container" style={{
                         display: 'flex',
                         justifyContent: 'space-between',
                         marginBottom: '3rem',
@@ -287,7 +287,7 @@ const RequisitionFormPage = () => {
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                                         <label style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>STEP 1: SELECT REQUEST TYPE</label>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
+                                    <div className="request-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
                                         {[
                                             { id: 'po_item', label: 'PO ITEMS', icon: '📦', color: '#6366f1' },
                                             { id: 'non_po_item', label: 'NON-PO ITEMS', icon: '🏢', color: '#10b981' },
@@ -296,6 +296,7 @@ const RequisitionFormPage = () => {
                                         ].map(t => (
                                             <div
                                                 key={t.id}
+                                                className="request-type-card"
                                                 onClick={() => setForm({ ...form, request_type: t.id })}
                                                 style={{
                                                     padding: '1.25rem',
@@ -316,7 +317,7 @@ const RequisitionFormPage = () => {
                                     </div>
                                 </div>
 
-                                <div className="glass-card" style={{ padding: '2rem' }}>
+                                <div className="glass-card form-section" style={{ padding: '2rem' }}>
                                     <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', opacity: 0.7 }}>PRIMARY DETAILS</h3>
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                                         <div className="form-group" style={{ gridColumn: 'span 2' }}>
@@ -406,68 +407,107 @@ const RequisitionFormPage = () => {
                             <div className="animate-slide-in">
                                 <div className="glass-card" style={{ padding: '2rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                        <h3 style={{ fontSize: '1.1rem' }}>BILL OF QUANTITIES (BOQ)</h3>
-                                        <button type="button" className="btn btn-primary" onClick={addItem}>
-                                            <Plus size={16} /> Add Line
+                                        <div>
+                                            <h3 style={{ fontSize: '1rem', letterSpacing: '0.05em', fontWeight: 800 }}>BILL OF QUANTITIES (BOQ)</h3>
+                                            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Itemize the goods or services requested below.</p>
+                                        </div>
+                                        <button type="button" className="btn btn-primary" onClick={addItem} style={{ gap: '8px', padding: '10px 20px' }}>
+                                            <Plus size={18} /> Add Line Item
                                         </button>
                                     </div>
+
+                                    {/* Table Headers */}
+                                    <div className="boq-header" style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: '2fr 80px 80px 120px 150px 40px',
+                                        gap: '12px'
+                                    }}>
+                                        <div>Description & Allocation</div>
+                                        <div style={{ textAlign: 'center' }}>Unit</div>
+                                        <div style={{ textAlign: 'center' }}>Qty</div>
+                                        <div style={{ textAlign: 'right' }}>Unit Price</div>
+                                        <div style={{ textAlign: 'right' }}>Line Total</div>
+                                        <div></div>
+                                    </div>
+
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        {items.map((item, index) => (
-                                            <div key={index} className="ledger-row" style={{
-                                                display: 'grid',
-                                                gridTemplateColumns: '2fr 100px 100px 150px 140px 40px',
-                                                gap: '12px',
-                                                padding: '1.25rem',
-                                                background: '#f8fafc',
-                                                borderRadius: '12px'
+                                        {items.length === 0 ? (
+                                            <div style={{ padding: '3rem', textAlign: 'center', opacity: 0.5, border: '1px dashed var(--border)', borderRadius: 'var(--radius)' }}>
+                                                No items added yet. Click "Add Line Item" to start.
+                                            </div>
+                                        ) : items.map((item, index) => (
+                                            <div key={index} className="boq-item-row animate-slide-in" style={{
+                                                gridTemplateColumns: '2fr 80px 80px 120px 150px 40px'
                                             }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                    <input
-                                                        placeholder="Description"
-                                                        value={item.description}
-                                                        onChange={(e) => updateItem(index, 'description', e.target.value)}
-                                                    />
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                    <div className="boq-field-group">
                                                         <input
-                                                            placeholder="GL Code"
-                                                            value={item.gl_account_code}
-                                                            onChange={(e) => updateItem(index, 'gl_account_code', e.target.value)}
-                                                            style={{ fontSize: '0.7rem', padding: '4px' }}
-                                                        />
-                                                        <input
-                                                            placeholder="Cat."
-                                                            value={item.gl_category}
-                                                            onChange={(e) => updateItem(index, 'gl_category', e.target.value)}
-                                                            style={{ fontSize: '0.7rem', padding: '4px' }}
+                                                            placeholder="Enter item description..."
+                                                            value={item.description}
+                                                            onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                                            style={{ fontSize: '1rem' }}
                                                         />
                                                     </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: 12 }}>
+                                                        <div className="boq-field-group">
+                                                            <label className="boq-field-label">GL Account</label>
+                                                            <input
+                                                                placeholder="e.g. 50203010"
+                                                                value={item.gl_account_code}
+                                                                onChange={(e) => updateItem(index, 'gl_account_code', e.target.value)}
+                                                                style={{ fontSize: '0.75rem' }}
+                                                            />
+                                                        </div>
+                                                        <div className="boq-field-group">
+                                                            <label className="boq-field-label">Category</label>
+                                                            <input
+                                                                placeholder="e.g. Office Supplies"
+                                                                value={item.gl_category}
+                                                                onChange={(e) => updateItem(index, 'gl_category', e.target.value)}
+                                                                style={{ fontSize: '0.75rem' }}
+                                                            />
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <input
-                                                    placeholder="Unit"
-                                                    value={item.unit}
-                                                    onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                                                />
-                                                <input
-                                                    type="number"
-                                                    value={item.quantity}
-                                                    onChange={(e) => updateItem(index, 'quantity', e.target.value)}
-                                                />
-                                                <input
-                                                    type="number"
-                                                    value={item.estimated_unit_cost}
-                                                    onChange={(e) => updateItem(index, 'estimated_unit_cost', e.target.value)}
-                                                />
-                                                <div style={{ textAlign: 'right', fontWeight: 800 }}>
-                                                    ₱{item.line_total?.toLocaleString()}
+                                                <div className="boq-field-group" style={{ justifyContent: 'center' }}>
+                                                    <input
+                                                        placeholder="pcs"
+                                                        value={item.unit}
+                                                        onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                                                        style={{ textAlign: 'center' }}
+                                                    />
                                                 </div>
-                                                <button type="button" onClick={() => removeItem(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none' }}>
-                                                    <Trash2 size={18} />
-                                                </button>
+                                                <div className="boq-field-group" style={{ justifyContent: 'center' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={item.quantity}
+                                                        onChange={(e) => updateItem(index, 'quantity', e.target.value)}
+                                                        style={{ textAlign: 'center' }}
+                                                    />
+                                                </div>
+                                                <div className="boq-field-group" style={{ justifyContent: 'center' }}>
+                                                    <input
+                                                        type="number"
+                                                        value={item.estimated_unit_cost}
+                                                        onChange={(e) => updateItem(index, 'estimated_unit_cost', e.target.value)}
+                                                        style={{ textAlign: 'right' }}
+                                                    />
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontWeight: 800, fontSize: '1.125rem', color: 'var(--primary)' }}>
+                                                    PHP {item.line_total?.toLocaleString()}
+                                                </div>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <button type="button" onClick={() => removeItem(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6 }} onMouseEnter={(e) => e.target.style.opacity = '1'} onMouseLeave={(e) => e.target.style.opacity = '0.6'}>
+                                                        <Trash2 size={20} />
+                                                    </button>
+                                                </div>
                                             </div>
                                         ))}
                                     </div>
-                                    <div style={{ marginTop: '2rem', textAlign: 'right', fontSize: '1.5rem', fontWeight: 800 }}>
-                                        TOTAL: <span style={{ color: 'var(--primary)' }}>₱{calculateTotal().toLocaleString()}</span>
+
+                                    <div className="boq-total-section">
+                                        <div className="boq-total-label">ESTIMATED TOTAL:</div>
+                                        <div className="boq-total-amount">PHP {calculateTotal().toLocaleString()}</div>
                                     </div>
                                 </div>
                             </div>
@@ -516,7 +556,7 @@ const RequisitionFormPage = () => {
                                             <div style={{ fontWeight: 700 }}>{items.length} line items</div>
                                         </div>
                                     </div>
-                                    <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                    <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
                                         <strong>Ready to Submit?</strong> Once created, this will be saved as a Draft and you can then submit it for approval.
                                     </div>
                                 </div>
@@ -528,9 +568,10 @@ const RequisitionFormPage = () => {
                             justifyContent: 'space-between',
                             marginTop: '2rem',
                             padding: '1.5rem',
-                            background: 'white',
-                            borderRadius: '16px',
-                            boxShadow: '0 -10px 20px rgba(0,0,0,0.02)'
+                            background: 'var(--bg-card)',
+                            borderRadius: 'var(--radius)',
+                            border: '1px solid var(--border)',
+                            backdropFilter: 'blur(10px)'
                         }}>
                             <button
                                 type="button"

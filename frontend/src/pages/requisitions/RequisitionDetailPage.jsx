@@ -118,62 +118,50 @@ const RequisitionDetailPage = () => {
     return (
         <div className="detail-view animate-fade-in">
             {/* Header Bar */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+            <div className="detail-header">
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
                         <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>{r.ref_number}</span>
                         <span className={`badge badge-${r.status}`}>{r.status.replace('_', ' ')}</span>
                         {r.priority === 'urgent' && <span className="badge badge-urgent">URGENT</span>}
                     </div>
-                    <h1 style={{ fontSize: '1.5rem' }}>{r.title}</h1>
+                    <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{r.title}</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Created by {r.user?.name} &bull; {new Date(r.created_at).toLocaleDateString()}</p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <div className="header-actions">
                     {(r.status === 'draft' || r.status === 'returned') && (
                         <>
                             <button className="btn btn-primary" onClick={() => submitMutation.mutate()} disabled={submitMutation.isPending}>
                                 <Send size={18} />
-                                {submitMutation.isPending ? 'Submitting...' : 'Submit PR'}
+                                {submitMutation.isPending ? '...' : 'SUBMIT PR'}
                             </button>
                             <button className="btn btn-outline" onClick={() => navigate(`/requisitions/${id}/edit`)}>
                                 <Edit size={18} />
-                                Edit PR
+                                EDIT
                             </button>
                         </>
                     )}
                     <button className="btn btn-outline" onClick={() => {
                         const token = useAuthStore.getState().token;
-                        if (!id || id === 'undefined') {
-                            toast.error('Invalid Requisition ID');
-                            return;
-                        }
-
-                        // Ultimate fallback strategy
-                        let baseUrl = API_BASE_URL || window.__P2P_API_URL || 'http://localhost:8000/api';
-                        if (baseUrl === 'undefined' || !baseUrl.startsWith('http')) {
-                            baseUrl = 'http://localhost:8000/api';
-                        }
-
-                        console.log('--- PR FORM CLICKED ---');
-                        console.log('Final baseUrl:', baseUrl);
-
+                        const baseUrl = API_BASE_URL || 'http://localhost:8000/api';
                         const finalUrl = `${baseUrl}/reports/requisitions/${id}/export?token=${token}`;
                         window.open(finalUrl, '_blank');
                     }}>
                         <Download size={18} />
-                        PR Form
+                        EXPORT
                     </button>
                     {r.status === 'approved' && (
                         <button className="btn btn-primary" style={{ background: '#059669' }}>
                             <Plus size={18} />
-                            Issue PO
+                            ISSUE PO
                         </button>
                     )}
                 </div>
             </div>
 
             {/* Tabs */}
-            <div style={{ borderBottom: '1px solid var(--border)', marginBottom: '2rem', display: 'flex', gap: '2rem' }}>
+            <div className="detail-tabs">
                 {['Overview', 'BOQ Items', 'Quotes & Awarding', 'Comparison Matrix', 'NTA & PO', 'Approval Workflow', 'Attachments', 'Audit Log']
                     .filter(t => {
                         if (t === 'Quotes & Awarding' && ['draft', 'returned'].includes(r.status)) return false;
@@ -191,9 +179,13 @@ const RequisitionDetailPage = () => {
                                 background: 'none',
                                 borderLeft: 'none', borderRight: 'none', borderTop: 'none',
                                 cursor: 'pointer',
-                                fontWeight: 600,
+                                fontWeight: 700,
+                                fontSize: '0.75rem',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
                                 color: activeTab === t.toLowerCase().replace(/ & /g, '-').replace(/ /g, '-') ? 'var(--primary)' : 'var(--text-muted)',
-                                whiteSpace: 'nowrap'
+                                whiteSpace: 'nowrap',
+                                transition: 'all 0.2s ease'
                             }}
                         >
                             {t}
