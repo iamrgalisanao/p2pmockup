@@ -89,10 +89,17 @@
 - ✅ **User Management UI**: Clean Glassmorphism design and modal implemented for Full CRUD, role toggles, and active status tracking.
 - ✅ **Vendor Directory UI**: Implemented full CRUD for vendor management (Read, Create, Update, Status Management) with Glassmorphism styling and correct RBAC toggles (admin/proc_officer).
 
+- ✅ **Testing Phase**: Validate the frontend routing based on roles, ensuring the correct documents display based on statuses.
+- ✅ **Review UAT flows**: Ensure PDF templates reflect the correct states mapping.
+- ✅ **Verify Edge Cases**: Check vendor overrides and SLA actions.
+- ✅ **UI/UX Revisions**: Styled the MainLayout sidebar collapse button to align flush with the edge using PITX branding (tab style). Centered `.main-content` across desktop and tablet views with a `1440px` max-width.
+- ✅ **Bugfixes & Maintenance**: Fixed React Hot Reloading crash (`navItems is not defined`) using `useMemo`. Cleared duplicate key index errors on database migrations and ran fresh DB seeds. Cleaned up unused Lucide-React imports in `DashboardPage.jsx` and resolved React hooks exhaustive-deps warnings.
+
 **Next Actions Required:**
-1. **Testing Phase**: Validate the frontend routing based on roles, ensuring the correct documents display based on statuses.
-2. **Review UAT flows**: Ensure PDF templates reflect the correct states mapping.
-3. **Verify Edge Cases**: Check vendor overrides and SLA actions.
+1. **Refine Requisition Workflows**: Validate that the entire end-to-end form and tracking logic executes seamlessly.
+2. **Payment Requests Integration**: Connect the payment interface logic to backend validation points.
+3. **Document Tracking**: Integrate PDF viewer and mark-as-sent status.
+
 
 ---
 
