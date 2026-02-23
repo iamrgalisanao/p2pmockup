@@ -1,18 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --primary: #818cf8;
-  --primary-hover: #6366f1;
-  --primary-glow: rgba(129, 140, 248, 0.4);
+  --primary: #1D439B;
+  --primary-hover: #153278;
+  --primary-glow: rgba(29, 67, 155, 0.4);
   --secondary: #94a3b8;
-  --accent: #f43f5e;
+  --accent: #EB342E;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
 
-  /* Dark Mode Base */
+  /* Dark Mode Base (Default) */
   --bg-main: #020617;
   --bg-card: rgba(15, 23, 42, 0.6);
+  --bg-input: rgba(15, 23, 42, 0.5);
   --text-dark: #f8fafc;
   --text-muted: #94a3b8;
   --border: rgba(255, 255, 255, 0.1);
@@ -21,9 +22,23 @@
   --sidebar-w: 260px;
   --sidebar-bg: rgba(2, 6, 23, 0.8);
 
-  --radius: 16px;
+  --radius: 4px;
+  /* Sharp PITX Roundedness */
   --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -4px rgba(0, 0, 0, 0.3);
   --shadow-glow: 0 0 20px var(--primary-glow);
+}
+
+body.light-mode {
+  --bg-main: #f8f8f8;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-input: #ffffff;
+  --text-dark: #1e293b;
+  --text-muted: #64748b;
+  --border: rgba(0, 0, 0, 0.1);
+  --border-hover: rgba(0, 0, 0, 0.15);
+  --sidebar-bg: #ffffff;
+  --primary-glow: rgba(29, 67, 155, 0.1);
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
 }
 
 * {
@@ -44,6 +59,13 @@ body {
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body.light-mode {
+  background-image:
+    radial-gradient(at 0% 0%, rgba(29, 67, 155, 0.05) 0, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(235, 52, 46, 0.05) 0, transparent 50%);
 }
 
 h1,
@@ -312,7 +334,7 @@ select,
 textarea {
   width: 100%;
   padding: 0.875rem 1.25rem;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--bg-input);
   border: 1px solid var(--border);
   color: var(--text-dark);
   border-radius: 12px;

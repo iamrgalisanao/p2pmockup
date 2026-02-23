@@ -9,14 +9,18 @@ import {
     LogOut,
     Bell,
     Search,
-    PlusCircle
+    PlusCircle,
+    Sun,
+    Moon
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { useThemeStore } from '../store/themeStore';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
 
 const MainLayout = () => {
     const { user, logout } = useAuthStore();
+    const { mode, toggleTheme } = useThemeStore();
     const navigate = useNavigate();
 
     // Fetch dynamic stats for notification counts (Industry Standard)
@@ -37,8 +41,10 @@ const MainLayout = () => {
         { name: 'Dashboard', path: '/', icon: LayoutDashboard },
         { name: 'My Inbox', path: '/inbox', icon: Inbox, badge: inboxCount },
         { name: 'Requisitions', path: '/requisitions', icon: FileText },
+        { name: 'Payment Requests', path: '/payment-requests', icon: FileText },
         { name: 'Vendors', path: '/vendors', icon: Truck },
         { name: 'User Management', path: '/users', icon: Users, role: ['admin', 'president'] },
+        { name: 'Reports', path: '/reports', icon: LayoutDashboard },
         { name: 'Settings', path: '/settings', icon: Settings },
     ];
 
@@ -46,8 +52,14 @@ const MainLayout = () => {
         <div className="app-wrapper">
             <aside className="sidebar">
                 <div className="sidebar-header" style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ width: 32, height: 32, background: 'var(--primary)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>P</div>
-                    <span style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.5px' }}>P2P PROCURE</span>
+                    <div style={{
+                        width: 36, height: 36,
+                        background: 'linear-gradient(135deg, #1D439B 50%, #EB342E 50%)',
+                        borderRadius: 'var(--radius)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        color: 'white', fontWeight: 900, fontSize: '1.25rem'
+                    }}>P</div>
+                    <span style={{ fontWeight: 800, fontSize: '1.2rem', letterSpacing: '-0.5px', color: 'var(--text-dark)' }}>PITX PROCURE</span>
                 </div>
 
                 <nav style={{ flex: 1 }}>
@@ -111,6 +123,9 @@ const MainLayout = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <button className="btn btn-outline" style={{ padding: '8px' }} onClick={toggleTheme} title={`Switch to ${mode === 'dark' ? 'light' : 'dark'} mode`}>
+                            {mode === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
                         <button className="btn btn-outline" style={{ padding: '8px' }}>
                             <Bell size={20} />
                         </button>

@@ -17,6 +17,12 @@ import InboxPage from './pages/InboxPage';
 import VendorListPage from './pages/vendors/VendorListPage';
 import UserListPage from './pages/UserListPage';
 import SettingsPage from './pages/SettingsPage';
+import PaymentRequestListPage from './pages/payments/PaymentRequestListPage';
+import PaymentRequestFormPage from './pages/payments/PaymentRequestFormPage';
+import PaymentRequestDetailPage from './pages/payments/PaymentRequestDetailPage';
+import ReportsPage from './pages/ReportsPage';
+import { useThemeStore } from './store/themeStore';
+import { useEffect } from 'react';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +43,12 @@ ProtectedRoute.propTypes = {
 };
 
 function App() {
+  const { initTheme } = useThemeStore();
+
+  useEffect(() => {
+    initTheme();
+  }, [initTheme]);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
@@ -57,7 +69,14 @@ function App() {
             <Route path="requisitions/:id/edit" element={<RequisitionFormPage />} />
 
             <Route path="vendors" element={<VendorListPage />} />
+
+            <Route path="payment-requests" element={<PaymentRequestListPage />} />
+            <Route path="payment-requests/new" element={<PaymentRequestFormPage />} />
+            <Route path="payment-requests/:id" element={<PaymentRequestDetailPage />} />
+            <Route path="payment-requests/:id/edit" element={<PaymentRequestFormPage />} />
+
             <Route path="users" element={<UserListPage />} />
+            <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>
         </Routes>

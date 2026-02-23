@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\PaymentRequestController;
 
 // ──────────────────────────────────────────────────
 // Public Routes
@@ -80,6 +81,13 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\EnsureUserIsActive'])->g
         Route::post('/documents/mark-sent', [DocumentController::class, 'markSent']);
         Route::get('/documents/view', [DocumentController::class, 'view']);
         Route::get('/documents', [DocumentController::class, 'index']);
+    });
+
+    // Payment Requests
+    Route::apiResource('payment-requests', PaymentRequestController::class);
+    Route::prefix('payment-requests/{payment_request}')->group(function () {
+        Route::post('/submit', [PaymentRequestController::class, 'submit']);
+        Route::post('/approvals/{step}/act', [PaymentRequestController::class, 'act']);
     });
 
     // Attachments — presigned URL

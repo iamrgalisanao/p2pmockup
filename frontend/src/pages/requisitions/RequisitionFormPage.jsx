@@ -13,7 +13,9 @@ import {
     Search,
     ChevronRight,
     HelpCircle,
-    X
+    X,
+    CheckCircle,
+    CheckSquare
 } from 'lucide-react';
 
 const RequisitionFormPage = () => {
@@ -24,6 +26,14 @@ const RequisitionFormPage = () => {
 
     const [showWiki, setShowWiki] = useState(false);
     const [wikiSection, setWikiSection] = useState('intro');
+    const [step, setStep] = useState(1);
+
+    const steps = [
+        { id: 1, label: 'Details', icon: Info },
+        { id: 2, label: 'Line Items', icon: Search },
+        { id: 3, label: 'Attachments', icon: Plus },
+        { id: 4, label: 'Review', icon: CheckSquare }
+    ];
 
     const [form, setForm] = useState({
         title: '',
@@ -49,7 +59,8 @@ const RequisitionFormPage = () => {
             vat_type: '12% VAT',
             wht_type: 'None (X1)',
             gross_price: 0,
-            net_price: 0
+            net_price: 0,
+            line_total: 0
         }
     ]);
 
@@ -152,12 +163,29 @@ const RequisitionFormPage = () => {
 
     const calculateTotal = () => items.reduce((sum, item) => sum + (parseFloat(item.line_total) || 0), 0);
 
+    const validateStep = (currentStep) => {
+        if (currentStep === 1) {
+            if (!form.title || !form.department_id || !form.cost_center || !form.date_needed || !form.particulars) {
+                toast.error('Please fill in all required fields.');
+                return false;
+            }
+        }
+        if (currentStep === 2) {
+            if (items.length === 0) {
+                toast.error('At least one line item is required.');
+                return false;
+            }
+            if (items.some(i => !i.description || !i.quantity || !i.estimated_unit_cost)) {
+                toast.error('Please complete all line item details.');
+                return false;
+            }
+        }
+        return true;
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
-        if (items.some(i => !i.description)) {
-            toast.error('Please fill in all item descriptions.');
-            return;
-        }
+        if (!validateStep(2)) return;
         mutation.mutate({
             ...form,
             items,
@@ -189,388 +217,350 @@ const RequisitionFormPage = () => {
             </div>
 
             <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
-                <form onSubmit={handleSubmit} style={{ flex: 1 }}>
-                    {/* STEP 1: SELECT REQUEST TYPE - Refined for better space utility */}
-                    <div style={{ marginBottom: '2.5rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                            <label style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>STEP 1: SELECT REQUEST TYPE</label>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600 }}>Alignment: CRIS Guide v2.4</span>
+                <div style={{ flex: 1 }}>
+                    {/* Progress Bar */}
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        marginBottom: '3rem',
+                        position: 'relative',
+                        padding: '0 1rem'
+                    }}>
+                        <div style={{
+                            position: 'absolute',
+                            top: '20px',
+                            left: '2rem',
+                            right: '2rem',
+                            height: '2px',
+                            background: 'var(--border)',
+                            zIndex: 0
+                        }}>
+                            <div style={{
+                                width: `${((step - 1) / (steps.length - 1)) * 100}%`,
+                                height: '100%',
+                                background: 'var(--primary)',
+                                transition: 'all 0.3s ease'
+                            }} />
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
-                            {[
-                                { id: 'po_item', label: 'PO ITEMS', icon: '📦', color: '#6366f1' },
-                                { id: 'non_po_item', label: 'NON-PO ITEMS', icon: '🏢', color: '#10b981' },
-                                { id: 'cash_advance', label: 'CASH ADVANCE', icon: '💵', color: '#f59e0b' },
-                                { id: 'liquidation', label: 'LIQUIDATION', icon: '📝', color: '#ef4444' }
-                            ].map(t => (
-                                <div
-                                    key={t.id}
-                                    onClick={() => setForm({ ...form, request_type: t.id })}
-                                    style={{
-                                        position: 'relative',
-                                        padding: '1.25rem',
-                                        borderRadius: '16px',
-                                        border: form.request_type === t.id ? `2px solid ${t.color}` : '1px solid var(--border)',
-                                        background: form.request_type === t.id ? `${t.color}08` : 'white',
-                                        cursor: 'pointer',
-                                        textAlign: 'left',
-                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '1rem',
-                                        boxShadow: form.request_type === t.id ? `0 10px 20px -5px ${t.color}20` : 'none',
-                                        transform: form.request_type === t.id ? 'translateY(-2px)' : 'none'
-                                    }}
-                                >
-                                    <div style={{
-                                        width: '44px', height: '44px', borderRadius: '12px',
-                                        background: form.request_type === t.id ? t.color : '#f1f5f9',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '1.25rem',
-                                        transition: 'all 0.3s'
-                                    }}>
-                                        {t.icon}
-                                    </div>
-                                    <div>
-                                        <div style={{
-                                            fontWeight: 800, fontSize: '0.75rem',
-                                            color: form.request_type === t.id ? t.color : 'var(--text-dark)',
-                                            letterSpacing: '0.02em'
-                                        }}>{t.label}</div>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '2px' }}>Standard Protocol</div>
-                                    </div>
-                                    {form.request_type === t.id && (
-                                        <div style={{ position: 'absolute', top: 10, right: 10 }}>
-                                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: t.color }} />
-                                        </div>
-                                    )}
+                        {steps.map((s) => (
+                            <div
+                                key={s.id}
+                                onClick={() => step > s.id && setStep(s.id)}
+                                style={{
+                                    zIndex: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    cursor: step > s.id ? 'pointer' : 'default'
+                                }}
+                            >
+                                <div style={{
+                                    width: '40px',
+                                    height: '40px',
+                                    borderRadius: '50%',
+                                    background: step >= s.id ? 'var(--primary)' : 'var(--bg-main)',
+                                    border: `2px solid ${step >= s.id ? 'var(--primary)' : 'var(--border)'}`,
+                                    color: step >= s.id ? 'white' : 'var(--text-muted)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: step === s.id ? '0 0 0 4px var(--primary-light)' : 'none'
+                                }}>
+                                    {step > s.id ? <CheckCircle size={20} /> : <s.icon size={20} />}
                                 </div>
-                            ))}
-                        </div>
+                                <span style={{
+                                    fontSize: '0.75rem',
+                                    fontWeight: 700,
+                                    color: step >= s.id ? 'var(--text-dark)' : 'var(--text-muted)'
+                                }}>{s.label}</span>
+                            </div>
+                        ))}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
-                        <div className="form-main">
-                            <div className="glass-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
-                                <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', opacity: 0.7 }}>PRIMARY DETAILS</h3>
-
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
-                                            Requisition Title / Purpose <span style={{ color: 'var(--accent)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. Purchase of IT Equipment"
-                                            value={form.title}
-                                            onChange={(e) => setForm({ ...form, title: e.target.value })}
-                                            required
-                                        />
+                    <form onSubmit={handleSubmit}>
+                        {step === 1 && (
+                            <div className="animate-slide-in">
+                                {/* STEP 1: SELECT REQUEST TYPE */}
+                                <div style={{ marginBottom: '2.5rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                                        <label style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>STEP 1: SELECT REQUEST TYPE</label>
                                     </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
+                                        {[
+                                            { id: 'po_item', label: 'PO ITEMS', icon: '📦', color: '#6366f1' },
+                                            { id: 'non_po_item', label: 'NON-PO ITEMS', icon: '🏢', color: '#10b981' },
+                                            { id: 'cash_advance', label: 'CASH ADVANCE', icon: '💵', color: '#f59e0b' },
+                                            { id: 'liquidation', label: 'LIQUIDATION', icon: '📝', color: '#ef4444' }
+                                        ].map(t => (
+                                            <div
+                                                key={t.id}
+                                                onClick={() => setForm({ ...form, request_type: t.id })}
+                                                style={{
+                                                    padding: '1.25rem',
+                                                    borderRadius: '16px',
+                                                    border: form.request_type === t.id ? `2px solid ${t.color}` : '1px solid var(--border)',
+                                                    background: form.request_type === t.id ? `${t.color}08` : 'var(--bg-card)',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '1rem',
+                                                    transition: 'all 0.3s ease'
+                                                }}
+                                            >
+                                                <div style={{ fontSize: '1.5rem' }}>{t.icon}</div>
+                                                <div style={{ fontWeight: 800, fontSize: '0.75rem' }}>{t.label}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
-                                    {form.request_type === 'po_item' && (
-                                        <div className="form-group">
-                                            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>PO Number</label>
+                                <div className="glass-card" style={{ padding: '2rem' }}>
+                                    <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', opacity: 0.7 }}>PRIMARY DETAILS</h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                            <label>Title / Purpose <span style={{ color: 'var(--accent)' }}>*</span></label>
                                             <input
                                                 type="text"
-                                                placeholder="Enter related PO..."
-                                                value={form.po_number}
-                                                onChange={(e) => setForm({ ...form, po_number: e.target.value })}
+                                                value={form.title}
+                                                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                                                required
                                             />
                                         </div>
-                                    )}
-
-                                    <div className="form-group" style={{ gridColumn: form.request_type === 'po_item' ? 'auto' : 'span 2' }}>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
-                                            Cost Center <span style={{ color: 'var(--accent)' }}>*</span>
-                                        </label>
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. CC-ADMIN-01"
-                                            value={form.cost_center}
-                                            onChange={(e) => setForm({ ...form, cost_center: e.target.value })}
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
-                                            Particulars / Background <span style={{ color: 'var(--accent)' }}>*</span>
-                                        </label>
-                                        <textarea
-                                            rows="3"
-                                            placeholder="Additional particulars..."
-                                            value={form.particulars}
-                                            onChange={(e) => setForm({ ...form, particulars: e.target.value })}
-                                            required
-                                        />
+                                        <div className="form-group">
+                                            <label>Department <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                            <select
+                                                value={form.department_id}
+                                                onChange={(e) => setForm({ ...form, department_id: e.target.value })}
+                                                required
+                                            >
+                                                <option value="">Select Dept</option>
+                                                {depts?.filter(d => d.type === 'department').map(d => (
+                                                    <option key={d.id} value={d.id}>{d.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Project Scope</label>
+                                            <select
+                                                value={form.project_id}
+                                                onChange={(e) => setForm({ ...form, project_id: e.target.value })}
+                                            >
+                                                <option value="">None (General Admin)</option>
+                                                {depts?.filter(d => d.type === 'project').map(d => (
+                                                    <option key={d.id} value={d.id}>{d.name}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Cost Center <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                            <input
+                                                type="text"
+                                                value={form.cost_center}
+                                                onChange={(e) => setForm({ ...form, cost_center: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Date Needed <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                            <input
+                                                type="date"
+                                                value={form.date_needed}
+                                                onChange={(e) => setForm({ ...form, date_needed: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Priority Level</label>
+                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                                <button
+                                                    type="button"
+                                                    className={`btn ${form.priority === 'normal' ? 'btn-primary' : 'btn-outline'}`}
+                                                    onClick={() => setForm({ ...form, priority: 'normal' })}
+                                                    style={{ flex: 1, fontSize: '0.75rem' }}
+                                                >Normal</button>
+                                                <button
+                                                    type="button"
+                                                    className={`btn ${form.priority === 'urgent' ? 'btn-primary' : 'btn-outline'}`}
+                                                    onClick={() => setForm({ ...form, priority: 'urgent' })}
+                                                    style={{ flex: 1, fontSize: '0.75rem', borderColor: form.priority === 'urgent' ? 'var(--danger)' : '' }}
+                                                >Urgent</button>
+                                            </div>
+                                        </div>
+                                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                            <label>Particulars <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                            <textarea
+                                                rows="3"
+                                                value={form.particulars}
+                                                onChange={(e) => setForm({ ...form, particulars: e.target.value })}
+                                                required
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        )}
 
-                            {/* STEP 3: BILL OF QUANTITIES (Ledger Style) */}
-                            <div className="glass-card" style={{ padding: '2rem', border: '1px solid rgba(0,0,0,0.05)' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                                    <div>
-                                        <h3 style={{ fontSize: '1.1rem', marginBottom: '4px' }}>BILL OF QUANTITIES (BOQ)</h3>
-                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Inventory ledger for this requisition. All fields required for SAP.</p>
+                        {step === 2 && (
+                            <div className="animate-slide-in">
+                                <div className="glass-card" style={{ padding: '2rem' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                        <h3 style={{ fontSize: '1.1rem' }}>BILL OF QUANTITIES (BOQ)</h3>
+                                        <button type="button" className="btn btn-primary" onClick={addItem}>
+                                            <Plus size={16} /> Add Line
+                                        </button>
                                     </div>
-                                    <button
-                                        type="button"
-                                        className="btn btn-primary"
-                                        style={{ padding: '8px 16px', fontSize: '0.8125rem', borderRadius: '10px' }}
-                                        onClick={addItem}
-                                    >
-                                        <Plus size={16} /> Add New Line
-                                    </button>
-                                </div>
-
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {items.map((item, index) => (
-                                        <div
-                                            key={index}
-                                            className="ledger-row"
-                                            style={{
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {items.map((item, index) => (
+                                            <div key={index} className="ledger-row" style={{
                                                 display: 'grid',
-                                                gridTemplateColumns: 'minmax(200px, 2fr) 100px 100px 150px 160px 140px 40px',
+                                                gridTemplateColumns: '2fr 100px 100px 150px 140px 40px',
                                                 gap: '12px',
-                                                alignItems: 'start',
                                                 padding: '1.25rem',
-                                                background: '#ffffff',
-                                                borderRadius: '14px',
-                                                border: '1px solid var(--border)',
-                                                transition: 'box-shadow 0.2s',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>
-                                                    Item Description <span style={{ color: 'var(--accent)' }}>*</span>
-                                                </label>
-                                                <input
-                                                    type="text"
-                                                    placeholder="Specify item or service..."
-                                                    value={item.description}
-                                                    onChange={(e) => updateItem(index, 'description', e.target.value)}
-                                                    required
-                                                    style={{ border: '1px solid transparent', background: '#f8fafc', fontWeight: 600, padding: '10px 12px' }}
-                                                />
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                                                    <div style={{ position: 'relative' }}>
-                                                        <Search size={12} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                                                background: '#f8fafc',
+                                                borderRadius: '12px'
+                                            }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                    <input
+                                                        placeholder="Description"
+                                                        value={item.description}
+                                                        onChange={(e) => updateItem(index, 'description', e.target.value)}
+                                                    />
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                                                         <input
-                                                            type="text"
                                                             placeholder="GL Code"
                                                             value={item.gl_account_code}
                                                             onChange={(e) => updateItem(index, 'gl_account_code', e.target.value)}
-                                                            style={{ border: 'none', background: '#f1f5f9', fontSize: '0.7rem', padding: '6px 6px 6px 26px', borderRadius: '6px' }}
+                                                            style={{ fontSize: '0.7rem', padding: '4px' }}
+                                                        />
+                                                        <input
+                                                            placeholder="Cat."
+                                                            value={item.gl_category}
+                                                            onChange={(e) => updateItem(index, 'gl_category', e.target.value)}
+                                                            style={{ fontSize: '0.7rem', padding: '4px' }}
                                                         />
                                                     </div>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Category"
-                                                        value={item.gl_category}
-                                                        onChange={(e) => updateItem(index, 'gl_category', e.target.value)}
-                                                        style={{ border: 'none', background: '#f1f5f9', fontSize: '0.7rem', padding: '6px 8px', borderRadius: '6px' }}
-                                                    />
                                                 </div>
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Unit</label>
                                                 <input
-                                                    type="text"
-                                                    placeholder="pcs"
+                                                    placeholder="Unit"
                                                     value={item.unit}
                                                     onChange={(e) => updateItem(index, 'unit', e.target.value)}
-                                                    style={{ background: '#f8fafc', textAlign: 'center', padding: '10px 4px' }}
                                                 />
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Qty</label>
                                                 <input
                                                     type="number"
                                                     value={item.quantity}
-                                                    onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                                                    style={{ background: '#f8fafc', textAlign: 'center', padding: '10px 4px' }}
+                                                    onChange={(e) => updateItem(index, 'quantity', e.target.value)}
                                                 />
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Unit Cost</label>
-                                                <div style={{ position: 'relative' }}>
-                                                    <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8' }}>₱</span>
-                                                    <input
-                                                        type="number"
-                                                        value={item.estimated_unit_cost}
-                                                        onChange={(e) => updateItem(index, 'estimated_unit_cost', parseFloat(e.target.value) || 0)}
-                                                        style={{ background: '#f8fafc', padding: '10px 10px 10px 24px', fontWeight: 700 }}
-                                                    />
+                                                <input
+                                                    type="number"
+                                                    value={item.estimated_unit_cost}
+                                                    onChange={(e) => updateItem(index, 'estimated_unit_cost', e.target.value)}
+                                                />
+                                                <div style={{ textAlign: 'right', fontWeight: 800 }}>
+                                                    ₱{item.line_total?.toLocaleString()}
                                                 </div>
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Tax Config</label>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                    <select
-                                                        value={item.vat_type}
-                                                        onChange={(e) => updateItem(index, 'vat_type', e.target.value)}
-                                                        style={{ padding: '6px 8px', fontSize: '0.7rem', background: '#eef2ff', borderColor: 'transparent', fontWeight: 600, color: 'var(--primary)' }}
-                                                    >
-                                                        <option>12% VAT</option>
-                                                        <option>0% Rated</option>
-                                                        <option>Exempt</option>
-                                                    </select>
-                                                    <select
-                                                        value={item.wht_type}
-                                                        onChange={(e) => updateItem(index, 'wht_type', e.target.value)}
-                                                        style={{ padding: '6px 8px', fontSize: '0.7rem', background: '#f1f5f9', borderColor: 'transparent' }}
-                                                    >
-                                                        <option>None (X1)</option>
-                                                        <option>1% WHT</option>
-                                                        <option>2% WHT</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', textAlign: 'right' }}>
-                                                <label style={{ fontSize: '0.65rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Line Total</label>
-                                                <div style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--primary)', paddingTop: '8px' }}>
-                                                    ₱ {(item.line_total || 0).toLocaleString()}
-                                                </div>
-                                            </div>
-
-                                            <div style={{ paddingTop: '32px' }}>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeItem(index)}
-                                                    style={{
-                                                        width: '32px', height: '32px', borderRadius: '8px',
-                                                        border: 'none', cursor: 'pointer', color: 'var(--danger)',
-                                                        background: '#fff1f2', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                    }}
-                                                >
-                                                    <Trash2 size={16} />
+                                                <button type="button" onClick={() => removeItem(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none' }}>
+                                                    <Trash2 size={18} />
                                                 </button>
                                             </div>
+                                        ))}
+                                    </div>
+                                    <div style={{ marginTop: '2rem', textAlign: 'right', fontSize: '1.5rem', fontWeight: 800 }}>
+                                        TOTAL: <span style={{ color: 'var(--primary)' }}>₱{calculateTotal().toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {step === 3 && (
+                            <div className="animate-slide-in">
+                                <div className="glass-card" style={{ padding: '3rem', textAlign: 'center' }}>
+                                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
+                                        <Plus size={40} />
+                                    </div>
+                                    <h2>Attachments</h2>
+                                    <p style={{ color: 'var(--text-muted)', marginBottom: '2rem' }}>
+                                        {isEdit
+                                            ? 'Manage files associated with this requisition.'
+                                            : 'You can upload supporting documents (signed PR, Specs, etc.) after saving this draft.'}
+                                    </p>
+                                    {!isEdit && (
+                                        <div style={{ padding: '1.5rem', background: '#fef3c7', color: '#92400e', borderRadius: '12px', fontSize: '0.875rem' }}>
+                                            Note: The system requires a record ID to link files. Please proceed to review.
                                         </div>
-                                    ))}
-                                </div>
-
-                                <div style={{
-                                    marginTop: '2.5rem',
-                                    padding: '1.5rem',
-                                    background: 'var(--sidebar-bg)',
-                                    borderRadius: '16px',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center',
-                                    color: 'white',
-                                    boxShadow: '0 10px 30px -10px rgba(15, 23, 42, 0.3)'
-                                }}>
-                                    <div>
-                                        <div style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: 700, letterSpacing: '0.1em' }}>GRAND ESTIMATED TOTAL</div>
-                                        <div style={{ fontSize: '0.8125rem', marginTop: '4px' }}>Total across {items.length} unique line items</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <span style={{ fontSize: '1.25rem', opacity: 0.6, marginRight: '0.5rem' }}>PHP</span>
-                                        <span style={{ fontSize: '2.5rem', fontWeight: 800, color: '#cbd5e1' }}>{calculateTotal().toLocaleString()}</span>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
+                        )}
 
-                            <div style={{ marginTop: '1.5rem', textAlign: 'right', fontSize: '1.25rem', fontWeight: 800 }}>
-                                ESTIMATED TOTAL: <span style={{ color: 'var(--primary)', marginLeft: '1rem' }}>PHP {calculateTotal().toLocaleString()}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <aside className="form-sidebar">
-                        <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '1.5rem' }}>
-                            <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', opacity: 0.7 }}>SETTINGS</h3>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                <div className="form-group">
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8125rem', fontWeight: 600 }}>
-                                        Department <span style={{ color: 'var(--accent)' }}>*</span>
-                                    </label>
-                                    <select
-                                        value={form.department_id}
-                                        onChange={(e) => setForm({ ...form, department_id: e.target.value })}
-                                        required
-                                    >
-                                        <option value="">Select Dept</option>
-                                        {depts?.filter(d => d.type === 'department').map(d => (
-                                            <option key={d.id} value={d.id}>{d.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8125rem', fontWeight: 600 }}>Project Scope</label>
-                                    <select
-                                        value={form.project_id}
-                                        onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-                                    >
-                                        <option value="">None (General Admin)</option>
-                                        {depts?.filter(d => d.type === 'project').map(d => (
-                                            <option key={d.id} value={d.id}>{d.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="form-group">
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8125rem', fontWeight: 600 }}>
-                                        Date Needed <span style={{ color: 'var(--accent)' }}>*</span>
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={form.date_needed}
-                                        onChange={(e) => setForm({ ...form, date_needed: e.target.value })}
-                                        required
-                                    />
-                                </div>
-
-                                <div className="form-group">
-                                    <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.8125rem', fontWeight: 600 }}>Priority Level</label>
-                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                        <button
-                                            type="button"
-                                            className={`btn ${form.priority === 'normal' ? 'btn-primary' : 'btn-outline'}`}
-                                            onClick={() => setForm({ ...form, priority: 'normal' })}
-                                            style={{ flex: 1, fontSize: '0.75rem' }}
-                                        >Normal</button>
-                                        <button
-                                            type="button"
-                                            className={`btn ${form.priority === 'urgent' ? 'btn-primary' : 'btn-outline'}`}
-                                            onClick={() => setForm({ ...form, priority: 'urgent' })}
-                                            style={{ flex: 1, fontSize: '0.75rem', borderColor: form.priority === 'urgent' ? 'var(--danger)' : '' }}
-                                        >Urgent</button>
+                        {step === 4 && (
+                            <div className="animate-slide-in">
+                                <div className="glass-card" style={{ padding: '2rem' }}>
+                                    <h3 style={{ marginBottom: '1.5rem' }}>Review Details</h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>TITLE</div>
+                                            <div style={{ fontWeight: 700 }}>{form.title}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>TYPE</div>
+                                            <div style={{ fontWeight: 700 }}>{form.request_type?.toUpperCase()}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>TOTAL AMOUNT</div>
+                                            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.25rem' }}>₱{calculateTotal().toLocaleString()}</div>
+                                        </div>
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>ITEMS</div>
+                                            <div style={{ fontWeight: 700 }}>{items.length} line items</div>
+                                        </div>
+                                    </div>
+                                    <div style={{ padding: '1rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                        <strong>Ready to Submit?</strong> Once created, this will be saved as a Draft and you can then submit it for approval.
                                     </div>
                                 </div>
                             </div>
+                        )}
+
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            marginTop: '2rem',
+                            padding: '1.5rem',
+                            background: 'white',
+                            borderRadius: '16px',
+                            boxShadow: '0 -10px 20px rgba(0,0,0,0.02)'
+                        }}>
+                            <button
+                                type="button"
+                                className="btn btn-outline"
+                                onClick={() => step > 1 ? setStep(step - 1) : navigate(-1)}
+                                style={{ minWidth: '120px' }}
+                            >
+                                <ArrowLeft size={18} /> {step === 1 ? 'Cancel' : 'Back'}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary"
+                                onClick={(e) => {
+                                    if (step < 4) {
+                                        if (validateStep(step)) {
+                                            setStep(step + 1);
+                                        }
+                                    } else {
+                                        handleSubmit(e);
+                                    }
+                                }}
+                                style={{ minWidth: '160px' }}
+                                disabled={mutation.isPending}
+                            >
+                                {step === 4 ? (mutation.isPending ? 'Saving...' : 'Create Requisition') : 'Continue'}
+                                {step < 4 && <Plus size={18} style={{ marginLeft: 8 }} />}
+                            </button>
                         </div>
-
-                        <div className="glass-card" style={{ padding: '1rem', background: '#f8fafc', marginBottom: '1.5rem' }}>
-                            <div style={{ display: 'flex', gap: 10, fontSize: '0.8125rem' }}>
-                                <Info size={16} color="var(--primary)" style={{ flexShrink: 0 }} />
-                                <p>Ensure all items include specific specifications to help procurement find the best quotes.</p>
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            className="btn btn-primary"
-                            style={{ width: '100%', height: '52px', fontSize: '1rem' }}
-                            disabled={mutation.isPending}
-                        >
-                            <Save size={20} />
-                            {mutation.isPending ? 'Processing...' : (isEdit ? 'Save Changes' : 'Create & Proceed')}
-                        </button>
-                    </aside>
-                </form>
-
+                    </form>
+                </div>
                 {/* INTERACTIVE WIKI SIDEBAR */}
                 {showWiki && (
                     <aside className="wiki-sidebar animate-fade-in" style={{ width: '350px', position: 'sticky', top: '2rem', height: 'calc(100vh - 12rem)', overflowY: 'auto' }}>
@@ -717,7 +707,7 @@ const RequisitionFormPage = () => {
                     </aside>
                 )}
             </div>
-        </div>
+        </div >
     );
 };
 
