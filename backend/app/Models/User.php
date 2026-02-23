@@ -157,7 +157,18 @@ class User extends Authenticatable
      */
     public function canSeeRequisition(Requisition $r): bool
     {
-        if ($this->isAdmin() || $this->isProcOfficer()) {
+        // Global visibility roles
+        if (
+            in_array($this->role, [
+                'admin',
+                'president',
+                'proc_officer',
+                'finance_reviewer',
+                'accounting_staff',
+                'accounting_supervisor',
+                'accounting_manager'
+            ])
+        ) {
             return true;
         }
 

@@ -90,9 +90,19 @@ class VendorQuoteController extends Controller
             $requisition->quotes()->update(['is_awarded' => false]);
 
             $quote->update(['is_awarded' => true]);
-            $requisition->update(['status' => 'awarded']);
+            $requisition->update(['status' => 'under_review']);
 
-            AuditLog::record($requisition, 'awarded', null, [
+            $lastStep = \App\Models\ApprovalStep::where('requisition_id', $requisition->id)->max('step_number') ?? 2;
+
+            \App\Models\ApprovalStep::create([
+                'requisition_id' => $requisition->id,
+                'step_number' => $lastStep + 1,
+                'step_label' => 'Accounting Staff - Documentation Check',
+                'role_required' => 'accounting_staff',
+                'sla_deadline' => now()->addHours(24),
+            ]);
+
+            AuditLog::record($requisition, 'awarded_quote', null, [
                 'quote_id' => $quote->id,
                 'basis' => $request->award_basis
             ]);

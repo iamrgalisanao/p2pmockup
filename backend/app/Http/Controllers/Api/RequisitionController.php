@@ -214,44 +214,6 @@ class RequisitionController extends Controller
                 'sla_deadline' => now()->addHours(24),
             ]);
 
-            // 2. High Value Approval (> 1M) - Alignment with CRIS Guide Page 3
-            if ($requisition->estimated_total > 1000000) {
-                ApprovalStep::create([
-                    'requisition_id' => $requisition->id,
-                    'step_number' => $stepNumber++,
-                    'step_label' => 'President/CEA Approval',
-                    'role_required' => 'president',
-                    'sla_deadline' => now()->addHours(48),
-                ]);
-            }
-
-            // 3. Accounting Staff (Checker) - Alignment with CRIS Guide Page 3
-            ApprovalStep::create([
-                'requisition_id' => $requisition->id,
-                'step_number' => $stepNumber++,
-                'step_label' => 'Accounting Staff - Documentation Check',
-                'role_required' => 'accounting_staff',
-                'sla_deadline' => now()->addHours(24),
-            ]);
-
-            // 4. Accounting Supervisor (Reviewer) - Alignment with CRIS Guide Page 3
-            ApprovalStep::create([
-                'requisition_id' => $requisition->id,
-                'step_number' => $stepNumber++,
-                'step_label' => 'Accounting Supervisor - Budget Review',
-                'role_required' => 'accounting_supervisor',
-                'sla_deadline' => now()->addHours(24),
-            ]);
-
-            // 5. Accounting Manager (Approver) - Alignment with CRIS Guide Page 3
-            ApprovalStep::create([
-                'requisition_id' => $requisition->id,
-                'step_number' => $stepNumber++,
-                'step_label' => 'Accounting Manager - Final Endorsement',
-                'role_required' => 'accounting_manager',
-                'sla_deadline' => now()->addHours(24),
-            ]);
-
             AuditLog::record($requisition, 'submitted');
         });
 

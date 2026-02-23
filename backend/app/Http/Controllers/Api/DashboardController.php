@@ -20,8 +20,9 @@ class DashboardController extends Controller
         $query = Requisition::with(['department', 'requester', 'currentApprovalStep'])
             ->orderByDesc('updated_at');
 
-        // Scope: proc_officer and admin see all; others see own dept/projects/inbox
-        if (!$user->isAdmin() && !$user->isProcOfficer()) {
+        // Scope: roles that can see all requisitions globally
+        $globalRoles = ['admin', 'president', 'proc_officer', 'finance_reviewer', 'accounting_staff', 'accounting_supervisor', 'accounting_manager'];
+        if (!in_array($user->role, $globalRoles)) {
             $query->where(function ($q) use ($user) {
                 // Own Department or Project
                 $q->where(function ($sq) use ($user) {
@@ -91,7 +92,8 @@ class DashboardController extends Controller
         $user = $request->user();
 
         $base = Requisition::query();
-        if (!$user->isAdmin() && !$user->isProcOfficer()) {
+        $globalRoles = ['admin', 'president', 'proc_officer', 'finance_reviewer', 'accounting_staff', 'accounting_supervisor', 'accounting_manager'];
+        if (!in_array($user->role, $globalRoles)) {
             $base->where(function ($q) use ($user) {
                 // Own Department or Project
                 $q->where(function ($sq) use ($user) {

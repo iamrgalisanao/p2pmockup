@@ -23,7 +23,12 @@ class DocumentController extends Controller
     {
         $type = $request->validate(['type' => 'required|in:requisition,nta,po,jo'])['type'];
 
-        // 1. Guard for states
+        // 1. Guard for roles
+        if ($type !== 'requisition' && !in_array($request->user()->role, ['admin', 'proc_officer'])) {
+            return response()->json(['message' => 'Only Procurement Officers or Admins can generate NTA and PO/JO documents.'], 403);
+        }
+
+        // 2. Guard for states
         if ($type === 'po' || $type === 'jo') {
             if ($requisition->status !== 'approved' && $requisition->status !== 'awarded') {
                 return response()->json(['message' => 'PO can only be generated after approval.'], 422);

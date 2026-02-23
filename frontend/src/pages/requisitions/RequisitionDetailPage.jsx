@@ -163,7 +163,7 @@ const RequisitionDetailPage = () => {
                         <Download size={18} />
                         PR Form
                     </button>
-                    {r.status === 'awarded' && (
+                    {r.status === 'approved' && (
                         <button className="btn btn-primary" style={{ background: '#059669' }}>
                             <Plus size={18} />
                             Issue PO
@@ -178,7 +178,7 @@ const RequisitionDetailPage = () => {
                     .filter(t => {
                         if (t === 'Quotes & Awarding' && ['draft', 'returned'].includes(r.status)) return false;
                         if (t === 'Comparison Matrix' && ['draft', 'returned'].includes(r.status)) return false;
-                        if (t === 'NTA & PO' && !['awarded', 'po_issued', 'mark_sent'].includes(r.status)) return false;
+                        if (t === 'NTA & PO' && !['approved', 'awarded', 'po_issued', 'mark_sent'].includes(r.status)) return false;
                         return true;
                     })
                     .map(t => (

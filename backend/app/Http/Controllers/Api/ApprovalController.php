@@ -72,7 +72,6 @@ class ApprovalController extends Controller
 
     private function handleApproval(Requisition $requisition, ApprovalStep $step)
     {
-        // Define routing logic based on SOP-03
         if ($step->step_number == 1) { // Dept Head approved -> Procurement
             $requisition->update(['status' => 'under_review']);
 
@@ -86,11 +85,39 @@ class ApprovalController extends Controller
 
         } elseif ($step->step_number == 2) { // Proc Officer approved -> For Quoting
             $requisition->update(['status' => 'for_quoting']);
-            // Procurement manually adds quotes now
-
-        } elseif ($step->step_number == 3) { // Finance Review (Final Step)
-            $requisition->update(['status' => 'approved']);
-            // Ready for NTA/PO generation
+            // Procurement manually adds quotes and awards now.
+        } elseif ($step->step_number >= 3) { // Post-Awarding Accounting Workflow
+            if ($step->role_required == 'accounting_staff') {
+                ApprovalStep::create([
+                    'requisition_id' => $requisition->id,
+                    'step_number' => $step->step_number + 1,
+                    'step_label' => 'Accounting Supervisor - Budget Review',
+                    'role_required' => 'accounting_supervisor',
+                    'sla_deadline' => now()->addHours(24)
+                ]);
+            } elseif ($step->role_required == 'accounting_supervisor') {
+                ApprovalStep::create([
+                    'requisition_id' => $requisition->id,
+                    'step_number' => $step->step_number + 1,
+                    'step_label' => 'Accounting Manager - Final Endorsement',
+                    'role_required' => 'accounting_manager',
+                    'sla_deadline' => now()->addHours(24)
+                ]);
+            } elseif ($step->role_required == 'accounting_manager') {
+                if ($requisition->estimated_total > 1000000) {
+                    ApprovalStep::create([
+                        'requisition_id' => $requisition->id,
+                        'step_number' => $step->step_number + 1,
+                        'step_label' => 'President/CEA Approval',
+                        'role_required' => 'president',
+                        'sla_deadline' => now()->addHours(48)
+                    ]);
+                } else {
+                    $requisition->update(['status' => 'approved']);
+                }
+            } elseif ($step->role_required == 'president') {
+                $requisition->update(['status' => 'approved']);
+            }
         }
     }
 }

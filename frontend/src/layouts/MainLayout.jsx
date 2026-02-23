@@ -38,7 +38,7 @@ const MainLayout = () => {
         { name: 'My Inbox', path: '/inbox', icon: Inbox, badge: inboxCount },
         { name: 'Requisitions', path: '/requisitions', icon: FileText },
         { name: 'Vendors', path: '/vendors', icon: Truck },
-        { name: 'User Management', path: '/users', icon: Users, role: ['admin'] },
+        { name: 'User Management', path: '/users', icon: Users, role: ['admin', 'president'] },
         { name: 'Settings', path: '/settings', icon: Settings },
     ];
 

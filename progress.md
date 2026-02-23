@@ -84,12 +84,15 @@
 - ✅ **Reporting**: `ComparisonMatrixExport` for side-by-side quote analysis (Excel).
 - ✅ **SLA Monitoring**: `p2p:check-sla` command for automated breach detection.
 - ✅ **Frontend Services**: `requisitionService.js` and `reportService.js` provided for API abstraction.
+- ✅ **Advanced RBAC**: Expanded Roles (`president`, `accounting_staff`, `accounting_supervisor`, `accounting_manager`) and UI mapping for users across all roles to view their workflows.
+- ✅ **Workflow Sequence Enforcement**: Converted mass ApprovalStep pre-creation to sequential step generation (only creating Step 1 upon submit, then 2 upon Step 1 approval, etc.).
+- ✅ **User Management UI**: Clean Glassmorphism design and modal implemented for Full CRUD, role toggles, and active status tracking.
+- ✅ **Vendor Directory UI**: Implemented full CRUD for vendor management (Read, Create, Update, Status Management) with Glassmorphism styling and correct RBAC toggles (admin/proc_officer).
 
 **Next Actions Required:**
-1. **Schedule SLA Check**: Register `p2p:check-sla` in `routes/console.php`.
-2. **Implement Email Notifications**: Create Mailable classes for SLA breaches and status changes.
-3. **Verify Frontend Integration**: Ensure components are correctly consuming data from the new services.
-4. **Logic Verification**: Test end-to-end workflow from submission to PO issuance.
+1. **Testing Phase**: Validate the frontend routing based on roles, ensuring the correct documents display based on statuses.
+2. **Review UAT flows**: Ensure PDF templates reflect the correct states mapping.
+3. **Verify Edge Cases**: Check vendor overrides and SLA actions.
 
 ---
 
