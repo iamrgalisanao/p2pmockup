@@ -60,6 +60,7 @@ api.interceptors.response.use(
         const message = error.response?.data?.message || 'Something went wrong';
 
         if (error.response?.status === 401) {
+            console.warn(`P2P App: 401 Unauthorized detected for ${error.config.url}. Forcing logout and redirect to login.`);
             useAuthStore.getState().logout();
             window.location.href = '/login';
         } else if (error.response?.status === 403) {
