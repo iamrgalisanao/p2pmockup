@@ -12,6 +12,7 @@ import {
     Download
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { API_BASE_URL } from '../../services/api';
 
 const RequisitionListPage = () => {
     const navigate = useNavigate();
@@ -26,7 +27,7 @@ const RequisitionListPage = () => {
 
     const handleExport = () => {
         const token = useAuthStore.getState().token;
-        const finalUrl = `http://localhost:8000/api/reports/export?token=${token}`;
+        const finalUrl = `${API_BASE_URL}/reports/export?token=${token}`;
         window.open(finalUrl, '_blank');
     };
 

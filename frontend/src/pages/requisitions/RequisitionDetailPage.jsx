@@ -144,7 +144,7 @@ const RequisitionDetailPage = () => {
                     )}
                     <button className="btn btn-outline" onClick={() => {
                         const token = useAuthStore.getState().token;
-                        const baseUrl = API_BASE_URL || 'http://localhost:8000/api';
+                        const baseUrl = API_BASE_URL;
                         const finalUrl = `${baseUrl}/reports/requisitions/${id}/export?token=${token}`;
                         window.open(finalUrl, '_blank');
                     }}>

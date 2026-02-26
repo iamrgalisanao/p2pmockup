@@ -14,7 +14,8 @@ const getBaseURL = () => {
         envUrl === 'undefined' ||
         envUrl === 'null' ||
         envUrl === '') {
-        return 'http://localhost:8000/api';
+        // In production, default to relative /api if no env is provided
+        return import.meta.env.PROD ? '/api' : 'http://localhost:8000/api';
     }
 
     // If it starts with / (relative path), allow it for single-domain production setups
