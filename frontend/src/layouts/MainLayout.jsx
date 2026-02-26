@@ -91,7 +91,7 @@ const MainLayout = () => {
                             fontWeight: 900,
                             fontSize: '1.2rem'
                         }}>PITX</div>
-                        {!isCollapsed && <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.5px', color: 'white', whiteSpace: 'nowrap' }}>PROCUREMENT</span>}
+                        {!isCollapsed && <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.5px', color: 'white', whiteSpace: 'nowrap' }}>P2P PROCUREMENT</span>}
                     </div>
 
                     <button

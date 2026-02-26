@@ -60,7 +60,7 @@ const LoginPage = () => {
                             fontWeight: 900,
                             fontSize: '1.5rem'
                         }}>PITX</div>
-                        <span style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1D439B' }}>Procurement</span>
+                        <span style={{ fontWeight: 800, fontSize: '1.25rem', color: '#1D439B' }}>P2P Procurement</span>
                     </div>
                     <div style={{
                         textTransform: 'uppercase',
