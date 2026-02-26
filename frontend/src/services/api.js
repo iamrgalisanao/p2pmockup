@@ -46,6 +46,7 @@ const api = axios.create({
 // Request Interceptor: Attach Token
 api.interceptors.request.use((config) => {
     const token = useAuthStore.getState().token;
+    console.log(`P2P App: Requesting ${config.url}, Token: ${token ? 'PRESENT' : 'MISSING'}`);
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }

@@ -1,6 +1,11 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
     RewriteBase /
+    
+    # Ensure Authorization header is passed to PHP
+    SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
     # 1. Forward /api requests to Laravel's index.php
     # Adjust the path /var/www/app.abbadev.com/p2pmockup/backend/public/index.php to your actual server path
