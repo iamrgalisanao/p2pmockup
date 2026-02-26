@@ -17,7 +17,12 @@ const getBaseURL = () => {
         return 'http://localhost:8000/api';
     }
 
-    // Force absolute URL to prevent relative path disasters in window.open
+    // If it starts with / (relative path), allow it for single-domain production setups
+    if (envUrl.startsWith('/')) {
+        return envUrl;
+    }
+
+    // Force absolute URL for local development or cross-domain
     if (!envUrl.startsWith('http')) {
         return `http://localhost:8000/api`;
     }
