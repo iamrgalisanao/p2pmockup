@@ -3,8 +3,8 @@
     RewriteBase /
 
     # 1. Forward /api requests to Laravel's index.php
-    # Adjust the path /var/www/p2pmockup/backend/public/index.php to your actual server path
-    RewriteRule ^api/(.*)$ /var/www/p2pmockup/backend/public/index.php [L,NC]
+    # Adjust the path /var/www/app.abbadev.com/p2pmockup/backend/public/index.php to your actual server path
+    RewriteRule ^api/(.*)$ /var/www/app.abbadev.com/p2pmockup/backend/public/index.php [L,NC]
 
     # 2. React Router: Redirect all other requests to index.html
     RewriteRule ^index\.html$ - [L]
