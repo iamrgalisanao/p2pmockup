@@ -13,7 +13,8 @@ import {
     Sun,
     Moon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Package
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -68,6 +69,7 @@ const MainLayout = () => {
         { name: 'Dashboard', path: '/', icon: LayoutDashboard },
         { name: 'My Inbox', path: '/inbox', icon: Inbox, badge: inboxCount },
         { name: 'Requisitions', path: '/requisitions', icon: FileText },
+        { name: 'Receiving (GRN)', path: '/grns', icon: Package },
         { name: 'Payment Requests', path: '/payment-requests', icon: FileText },
         { name: 'Vendors', path: '/vendors', icon: Truck },
         { name: 'User Management', path: '/users', icon: Users, role: ['admin', 'president'] },

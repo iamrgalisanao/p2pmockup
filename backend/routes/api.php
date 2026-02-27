@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\PaymentRequestController;
+use App\Http\Controllers\Api\GrnController;
 
 // ──────────────────────────────────────────────────
 // Public Routes
@@ -89,6 +90,9 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\EnsureUserIsActive'])->g
         Route::post('/submit', [PaymentRequestController::class, 'submit']);
         Route::post('/approvals/{step}/act', [PaymentRequestController::class, 'act']);
     });
+
+    // GRNs (Receiving)
+    Route::apiResource('grns', GrnController::class)->only(['index', 'store', 'show']);
 
     // Attachments — presigned URL
     Route::get('/attachments/{attachment}/url', [AttachmentController::class, 'presignedUrl']);
