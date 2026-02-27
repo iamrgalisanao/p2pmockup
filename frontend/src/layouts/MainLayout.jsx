@@ -21,6 +21,8 @@ import { useThemeStore } from '../store/themeStore';
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import HelpSystem from '../components/HelpSystem';
+import { HelpCircle } from 'lucide-react';
 
 const MainLayout = () => {
     const { user, logout } = useAuthStore();
@@ -28,6 +30,7 @@ const MainLayout = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -262,6 +265,9 @@ const MainLayout = () => {
                         <button className="btn btn-outline desktop-only" style={{ padding: '8px' }}>
                             <Bell size={20} />
                         </button>
+                        <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => setIsHelpOpen(true)} title="Open User Manual">
+                            <HelpCircle size={20} />
+                        </button>
                         <button className="btn btn-primary shimmer create-btn" onClick={() => navigate('/requisitions/new')}>
                             <PlusCircle size={18} />
                             <span>Create</span>
@@ -271,6 +277,8 @@ const MainLayout = () => {
 
                 <Outlet />
             </main>
+
+            <HelpSystem isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
         </div>
     );
 };
