@@ -59,7 +59,7 @@ const MainLayout = () => {
     // Fetch dynamic stats for notification counts (Industry Standard)
     const { data: stats } = useQuery({
         queryKey: ['dashboard-stats'],
-        queryFn: () => api.get('/dashboard/stats').then(res => res.data),
+        queryFn: () => api.get('dashboard/stats').then(res => res.data),
         refetchInterval: 30000, // Refresh every 30 seconds for live feel
     });
 

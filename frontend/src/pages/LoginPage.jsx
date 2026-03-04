@@ -18,7 +18,7 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
-            const response = await api.post('/auth/login', { email, password });
+            const response = await api.post('auth/login', { email, password });
             setAuth(response.data.user, response.data.token);
             toast.success('Welcome back!');
             navigate('/');
