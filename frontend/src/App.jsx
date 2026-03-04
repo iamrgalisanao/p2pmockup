@@ -21,6 +21,8 @@ import PaymentRequestListPage from './pages/payments/PaymentRequestListPage';
 import PaymentRequestFormPage from './pages/payments/PaymentRequestFormPage';
 import PaymentRequestDetailPage from './pages/payments/PaymentRequestDetailPage';
 import ReportsPage from './pages/ReportsPage';
+import BudgetPage from './pages/BudgetPage';
+import CostCentersPage from './pages/CostCentersPage';
 import { useThemeStore } from './store/themeStore';
 import { useEffect } from 'react';
 
@@ -76,6 +78,8 @@ function App() {
             <Route path="payment-requests/:id/edit" element={<PaymentRequestFormPage />} />
 
             <Route path="users" element={<UserListPage />} />
+            <Route path="cost-centers" element={<CostCentersPage />} />
+            <Route path="budget" element={<BudgetPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

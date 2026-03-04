@@ -316,6 +316,29 @@ h6 {
   box-shadow: 2px 0 10px var(--accent);
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .header-top {
   display: flex;
   justify-content: space-between;
@@ -380,34 +403,6 @@ body.light-mode .search-bar input:focus {
   }
 
   .sidebar-collapse-btn {
-    display: none !important;
-  }
-
-  .main-content {
-    margin-left: 0 !important;
-    padding: 1.5rem;
-  }
-
-  .mobile-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(4px);
-    z-index: 999;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-
-  .mobile-overlay.show {
-    opacity: 1;
-    pointer-events: auto;
-  }
-
-  .mobile-menu-toggle {
     display: flex !important;
     align-items: center;
     justify-content: center;

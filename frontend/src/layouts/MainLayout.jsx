@@ -13,7 +13,9 @@ import {
     Sun,
     Moon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    BarChart3,
+    Building2
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
@@ -70,6 +72,8 @@ const MainLayout = () => {
         { name: 'Requisitions', path: '/requisitions', icon: FileText },
         { name: 'Payment Requests', path: '/payment-requests', icon: FileText },
         { name: 'Vendors', path: '/vendors', icon: Truck },
+        { name: 'Cost Centers', path: '/cost-centers', icon: Building2, role: ['admin', 'president'] },
+        { name: 'Budget', path: '/budget', icon: BarChart3 },
         { name: 'User Management', path: '/users', icon: Users, role: ['admin', 'president'] },
         { name: 'Reports', path: '/reports', icon: LayoutDashboard },
         { name: 'Settings', path: '/settings', icon: Settings },
