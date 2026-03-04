@@ -104,7 +104,7 @@ const MainLayout = () => {
                         style={{
                             position: 'absolute',
                             right: isCollapsed ? '-1rem' : '-1.5rem',
-                            top: '50%',
+                            top: '70%',
                             transform: 'translateY(-50%)',
                             width: '24px',
                             height: '48px',
