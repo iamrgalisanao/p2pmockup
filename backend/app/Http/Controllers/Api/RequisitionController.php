@@ -195,9 +195,18 @@ class RequisitionController extends Controller
         }
         */
 
-        DB::transaction(function () use ($requisition) {
+        // Check Budget Availability (Hard Stop)
+        $budgetService = new \App\Services\BudgetService();
+        if (!$budgetService->isBudgetAvailable($requisition->department_id, $requisition->project_id, (float) $requisition->estimated_total)) {
+            return response()->json(['message' => 'Insufficient budget for this requisition.'], 422);
+        }
+
+        DB::transaction(function () use ($requisition, $budgetService) {
             $requisition->status = 'submitted';
             $requisition->save();
+
+            // Pre-Encumber funds in the ledger
+            $budgetService->preEncumber($requisition);
 
             // Clear any old/existing steps if re-submitting from returned/draft
             $requisition->approvalSteps()->delete();

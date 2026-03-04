@@ -13,13 +13,18 @@ import {
     Sun,
     Moon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Package,
+    BarChart3,
+    Building2
 } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '../services/api';
+import HelpSystem from '../components/HelpSystem';
+import { HelpCircle } from 'lucide-react';
 
 const MainLayout = () => {
     const { user, logout } = useAuthStore();
@@ -27,6 +32,7 @@ const MainLayout = () => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [isHelpOpen, setIsHelpOpen] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -53,7 +59,7 @@ const MainLayout = () => {
     // Fetch dynamic stats for notification counts (Industry Standard)
     const { data: stats } = useQuery({
         queryKey: ['dashboard-stats'],
-        queryFn: () => api.get('/dashboard/stats').then(res => res.data),
+        queryFn: () => api.get('dashboard/stats').then(res => res.data),
         refetchInterval: 30000, // Refresh every 30 seconds for live feel
     });
 
@@ -68,8 +74,11 @@ const MainLayout = () => {
         { name: 'Dashboard', path: '/', icon: LayoutDashboard },
         { name: 'My Inbox', path: '/inbox', icon: Inbox, badge: inboxCount },
         { name: 'Requisitions', path: '/requisitions', icon: FileText },
+        { name: 'Receiving (GRN)', path: '/grns', icon: Package },
         { name: 'Payment Requests', path: '/payment-requests', icon: FileText },
         { name: 'Vendors', path: '/vendors', icon: Truck },
+        { name: 'Cost Centers', path: '/cost-centers', icon: Building2, role: ['admin', 'president'] },
+        { name: 'Budget', path: '/budget', icon: BarChart3 },
         { name: 'User Management', path: '/users', icon: Users, role: ['admin', 'president'] },
         { name: 'Reports', path: '/reports', icon: LayoutDashboard },
         { name: 'Settings', path: '/settings', icon: Settings },
@@ -100,7 +109,7 @@ const MainLayout = () => {
                         style={{
                             position: 'absolute',
                             right: isCollapsed ? '-1rem' : '-1.5rem',
-                            top: '50%',
+                            top: '70%',
                             transform: 'translateY(-50%)',
                             width: '24px',
                             height: '48px',
@@ -260,6 +269,9 @@ const MainLayout = () => {
                         <button className="btn btn-outline desktop-only" style={{ padding: '8px' }}>
                             <Bell size={20} />
                         </button>
+                        <button className="btn btn-outline" style={{ padding: '8px' }} onClick={() => setIsHelpOpen(true)} title="Open User Manual">
+                            <HelpCircle size={20} />
+                        </button>
                         <button className="btn btn-primary shimmer create-btn" onClick={() => navigate('/requisitions/new')}>
                             <PlusCircle size={18} />
                             <span>Create</span>
@@ -269,6 +281,8 @@ const MainLayout = () => {
 
                 <Outlet />
             </main>
+
+            <HelpSystem isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
         </div>
     );
 };

@@ -14,18 +14,30 @@ const getBaseURL = () => {
         envUrl === 'undefined' ||
         envUrl === 'null' ||
         envUrl === '') {
-        // In production, default to relative /api if no env is provided
-        return import.meta.env.PROD ? '/api' : 'http://localhost:8000/api';
+        if (import.meta.env.PROD) {
+            // Detect if we are in the known subdirectory. 
+            // We check both the pathname and the domain to be safe.
+            const isSubDir = window.location.pathname.startsWith('/p2pmockup') ||
+                window.location.hostname.includes('p2pmockup');
+            const base = isSubDir ? '/p2pmockup/api/' : '/api/';
+            return window.location.origin + base;
+        }
+        return 'http://localhost:8000/api/';
     }
 
-    // If it starts with / (relative path), allow it for single-domain production setups
+    // Ensure it ends with a slash
+    if (!envUrl.endsWith('/')) {
+        envUrl += '/';
+    }
+
+    // If it starts with / (relative path), force absolute URL using current origin
     if (envUrl.startsWith('/')) {
-        return envUrl;
+        return window.location.origin + envUrl;
     }
 
-    // Force absolute URL for local development or cross-domain
+    // Force absolute URL for local development or cross-domain fallback
     if (!envUrl.startsWith('http')) {
-        return `http://localhost:8000/api`;
+        return `http://localhost:8000/api/`;
     }
 
     return envUrl;

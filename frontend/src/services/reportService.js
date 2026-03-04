@@ -1,7 +1,7 @@
 import api from './api';
 
 export const reportService = {
-    getCostComparison: (prId) => api.get(`/reports/cost-comparison/${prId}`),
+    getCostComparison: (prId) => api.get(`reports/cost-comparison/${prId}`),
 
     exportComparison: (prId) => {
         const url = `${api.defaults.baseURL}/reports/cost-comparison/${prId}/export`;
@@ -14,5 +14,5 @@ export const reportService = {
         window.open(url, '_blank');
     },
 
-    getDashboardStats: () => api.get('/dashboard/stats'),
+    getDashboardStats: () => api.get('dashboard/stats'),
 };

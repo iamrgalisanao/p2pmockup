@@ -24,8 +24,6 @@ const RequisitionFormPage = () => {
     const queryClient = useQueryClient();
     const isEdit = !!id;
 
-    const [showWiki, setShowWiki] = useState(false);
-    const [wikiSection, setWikiSection] = useState('intro');
     const [step, setStep] = useState(1);
 
     const steps = [
@@ -205,15 +203,10 @@ const RequisitionFormPage = () => {
                     <h1 style={{ fontSize: '1.75rem' }}>{isEdit ? 'Edit Requisition' : 'Create New Requisition'}</h1>
                     <p className="desktop-only" style={{ color: 'var(--text-muted)' }}>Fill in the details for your procurement request.</p>
                 </div>
-                <button
-                    type="button"
-                    className="btn btn-outline desktop-only"
-                    style={{ marginLeft: 'auto', gap: 8, borderColor: 'var(--primary)', color: 'var(--primary)' }}
-                    onClick={() => setShowWiki(!showWiki)}
-                >
-                    <BookOpen size={18} />
-                    {showWiki ? 'Close Guide' : 'Open User Manual'}
-                </button>
+                <div>
+                    <h1 style={{ fontSize: '1.75rem' }}>{isEdit ? 'Edit Requisition' : 'Create New Requisition'}</h1>
+                    <p className="desktop-only" style={{ color: 'var(--text-muted)' }}>Fill in the details for your procurement request.</p>
+                </div>
             </div>
 
             <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
@@ -602,153 +595,8 @@ const RequisitionFormPage = () => {
                         </div>
                     </form>
                 </div>
-                {/* INTERACTIVE WIKI SIDEBAR */}
-                {showWiki && (
-                    <aside className="wiki-sidebar animate-fade-in" style={{ width: '350px', position: 'sticky', top: '2rem', height: 'calc(100vh - 12rem)', overflowY: 'auto' }}>
-                        <div className="glass-card" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', borderLeft: '4px solid var(--primary)' }}>
-                            <div style={{ padding: '1.5rem', background: 'var(--primary)', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                    <HelpCircle size={20} />
-                                    <h3 style={{ fontSize: '1rem', color: 'white', margin: 0 }}>Maker Guide (Wiki)</h3>
-                                </div>
-                                <X size={20} onClick={() => setShowWiki(false)} style={{ cursor: 'pointer' }} />
-                            </div>
-
-                            <div style={{ flex: 1, padding: '1.5rem', overflowY: 'auto' }}>
-                                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '4px' }}>
-                                    {['intro', 'types', 'financials', 'ledger', 'workflow'].map(s => (
-                                        <button
-                                            key={s}
-                                            type="button"
-                                            onClick={() => setWikiSection(s)}
-                                            style={{
-                                                padding: '4px 12px',
-                                                borderRadius: '20px',
-                                                fontSize: '0.65rem',
-                                                fontWeight: 700,
-                                                whiteSpace: 'nowrap',
-                                                background: wikiSection === s ? 'var(--primary)' : '#f1f5f9',
-                                                color: wikiSection === s ? 'white' : 'var(--text-muted)',
-                                                border: 'none',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            {s.toUpperCase()}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {wikiSection === 'intro' && (
-                                    <div className="wiki-content">
-                                        <h4 style={{ marginBottom: '1rem' }}>Welcome, Maker!</h4>
-                                        <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', lineHeight: 1.6 }}>
-                                            As a <strong>Maker</strong> (Requester), your role is to initiate the procurement workflow.
-                                            This interface is aligned with the <strong>CRIS Standard</strong> to ensure that
-                                            all financial data is captured correctly from the start.
-                                        </p>
-                                        <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: 8, borderLeft: '2px solid var(--warning)' }}>
-                                            <div style={{ fontWeight: 700, fontSize: '0.75rem', marginBottom: '4px' }}>PRO-TIP</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                Always save as DRAFT if you are waiting for specific quote values to avoid re-submitting.
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {wikiSection === 'types' && (
-                                    <div className="wiki-content">
-                                        <h4 style={{ marginBottom: '1rem' }}>Understanding Request Types</h4>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            <div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--primary)' }}>📦 PO Items</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>For regular goods/services that require a formal Purchase Order generated by the system.</div>
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--primary)' }}>🏢 Non-PO Items</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Direct payments or utility billings where no PO is required.</div>
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--primary)' }}>💵 Cash Advance</div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Advance funds for authorized project expenses (Petty Cash replacement).</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {wikiSection === 'financials' && (
-                                    <div className="wiki-content">
-                                        <h4 style={{ marginBottom: '1rem' }}>Financial Metadata</h4>
-                                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                                            Critical fields required by Accounting (CRIS standard):
-                                        </p>
-                                        <ul style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)', paddingLeft: '1rem' }}>
-                                            <li style={{ marginBottom: '10px' }}><strong>Cost Center:</strong> The specific budget code where these funds will be deducted.</li>
-                                            <li style={{ marginBottom: '10px' }}><strong>PO Number:</strong> For 'PO Items', link this to an existing commitment if available.</li>
-                                            <li style={{ marginBottom: '10px' }}><strong>Particulars:</strong> Describe the "WHO, WHAT, WHERE, WHY" clearly.</li>
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {wikiSection === 'ledger' && (
-                                    <div className="wiki-content">
-                                        <h4 style={{ marginBottom: '1rem' }}>Bill of Quantities (BOQ)</h4>
-                                        <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                                            Each line item must be categorized for the <strong>SAP Upload</strong> phase:
-                                        </p>
-                                        <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                            <div style={{ fontSize: '0.75rem' }}>
-                                                <strong>GL Code:</strong> General Ledger numeric code (e.g. 5001-24).
-                                            </div>
-                                            <div style={{ fontSize: '0.75rem' }}>
-                                                <strong>VAT/WHT:</strong> Critical for net payment calculation. Default is 12% VAT.
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {wikiSection === 'workflow' && (
-                                    <div className="wiki-content">
-                                        <h4 style={{ marginBottom: '1rem' }}>Step-by-Step Approval</h4>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                            <div style={{ position: 'relative', paddingLeft: '2rem' }}>
-                                                <div style={{ position: 'absolute', left: 0, width: 24, height: 24, borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800 }}>1</div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.8125rem' }}>Dept Head Approval</div>
-                                            </div>
-
-                                            <div style={{ position: 'relative', paddingLeft: '2rem', borderLeft: '2px solid #e2e8f0', marginLeft: '11px', paddingBottom: '10px' }}>
-                                                <div style={{ position: 'absolute', left: '-12px', width: 24, height: 24, borderRadius: '50%', background: '#f43f5e', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800, border: '2px solid white' }}>$</div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.8125rem', color: 'var(--accent)' }}>&gt; PHP 1.0M Barrier</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>If total exceeds 1M, a President Approval step is automatically injected.</div>
-                                            </div>
-
-                                            <div style={{ position: 'relative', paddingLeft: '2rem' }}>
-                                                <div style={{ position: 'absolute', left: 0, width: 24, height: 24, borderRadius: '50%', background: '#64748b', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 800 }}>2</div>
-                                                <div style={{ fontWeight: 700, fontSize: '0.8125rem' }}>Accounting Triple-Gate</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Staff (Check) → Supervisor (Review) → Manager (Endorse).</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div style={{ padding: '1.25rem', borderTop: '1px solid var(--border)', background: '#f8fafc' }}>
-                                <button
-                                    type="button"
-                                    className="btn btn-primary"
-                                    style={{ width: '100%', fontSize: '0.75rem' }}
-                                    onClick={() => {
-                                        const nextMap = { intro: 'types', types: 'financials', financials: 'ledger', ledger: 'workflow', workflow: 'intro' };
-                                        setWikiSection(nextMap[wikiSection]);
-                                    }}
-                                >
-                                    Next Topic <ChevronRight size={16} />
-                                </button>
-                            </div>
-                        </div>
-                    </aside>
-                )}
             </div>
-        </div >
+        </div>
     );
 };
 

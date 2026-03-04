@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\PaymentRequestController;
+use App\Http\Controllers\Api\GrnController;
 
 // ──────────────────────────────────────────────────
 // Public Routes
@@ -90,8 +91,18 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\EnsureUserIsActive'])->g
         Route::post('/approvals/{step}/act', [PaymentRequestController::class, 'act']);
     });
 
+    // GRNs (Receiving)
+    Route::apiResource('grns', GrnController::class)->only(['index', 'store', 'show']);
+
     // Attachments — presigned URL
     Route::get('/attachments/{attachment}/url', [AttachmentController::class, 'presignedUrl']);
+
+    // Budget Monitoring
+    Route::prefix('budget')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\BudgetController::class, 'index']);
+        Route::get('/{department}', [\App\Http\Controllers\Api\BudgetController::class, 'show']);
+        Route::post('/transfer', [\App\Http\Controllers\Api\BudgetController::class, 'transfer']);
+    });
 
     // Reports & Exports
     Route::prefix('reports')->group(function () {

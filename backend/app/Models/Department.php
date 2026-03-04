@@ -50,4 +50,44 @@ class Department extends Model
     {
         return $this->hasMany(Requisition::class, 'department_id');
     }
+
+    public function budgetLedgers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(BudgetLedger::class, 'department_id');
+    }
+
+    public function projectLedgers(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(BudgetLedger::class, 'project_id');
+    }
+
+    // ── Budget Utilities ──────────────────────────────────────────────────
+
+    public function getPreEncumberedAmount(): float
+    {
+        return (float) BudgetLedger::where('department_id', $this->id)
+            ->where('type', 'pre_encumbrance')
+            ->sum('amount');
+    }
+
+    public function getEncumberedAmount(): float
+    {
+        return (float) BudgetLedger::where('department_id', $this->id)
+            ->whereIn('type', ['encumbrance', 'adjustment'])
+            ->whereNotNull('purchase_order_id')
+            ->sum('amount');
+    }
+
+    public function getActualSpentAmount(): float
+    {
+        return (float) BudgetLedger::where('department_id', $this->id)
+            ->where('type', 'actual')
+            ->sum('amount');
+    }
+
+    public function getAvailableBudget(): float
+    {
+        $consumed = BudgetLedger::where('department_id', $this->id)->sum('amount');
+        return (float) ($this->budget_limit - $consumed);
+    }
 }
