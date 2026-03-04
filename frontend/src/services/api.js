@@ -14,8 +14,14 @@ const getBaseURL = () => {
         envUrl === 'undefined' ||
         envUrl === 'null' ||
         envUrl === '') {
-        // In production, default to relative /api if no env is provided
-        return import.meta.env.PROD ? '/api' : 'http://localhost:8000/api';
+        // In production, default to relative 'api' if no env is provided.
+        // If the app is at app.com/sub/ then '/api' points to app.com/api (WRONG)
+        // We use window.location.pathname to detect the base path.
+        if (import.meta.env.PROD) {
+            const baseDir = window.location.pathname.split('/')[1] || '';
+            return baseDir ? `/${baseDir}/api` : '/api';
+        }
+        return 'http://localhost:8000/api';
     }
 
     // If it starts with / (relative path), allow it for single-domain production setups
