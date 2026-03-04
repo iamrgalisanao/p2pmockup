@@ -18,8 +18,10 @@ const getBaseURL = () => {
         // If the app is at app.com/sub/ then '/api' points to app.com/api (WRONG)
         // We use window.location.pathname to detect the base path.
         if (import.meta.env.PROD) {
-            const baseDir = window.location.pathname.split('/')[1] || '';
-            return baseDir ? `/${baseDir}/api` : '/api';
+            // Check if we are in the known subdirectory. Otherwise, default to absolute /api.
+            // This prevents routes like /login from being seen as the base directory.
+            const isSubDir = window.location.pathname.startsWith('/p2pmockup');
+            return isSubDir ? '/p2pmockup/api' : '/api';
         }
         return 'http://localhost:8000/api';
     }
