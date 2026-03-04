@@ -158,6 +158,10 @@ class PaymentRequestWorkflowService
 
         if ($step->id === $lastStep->id) {
             $this->transition($paymentRequest, 'approved');
+
+            // Record Actual Spend in Budget Ledger
+            $budgetService = new \App\Services\BudgetService();
+            $budgetService->actualize($paymentRequest);
         }
     }
 }

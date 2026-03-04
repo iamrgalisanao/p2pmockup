@@ -24,6 +24,8 @@ import ReportsPage from './pages/ReportsPage';
 import GrnListPage from './pages/grn/GrnListPage';
 import GrnFormPage from './pages/grn/GrnFormPage';
 import GrnDetailPage from './pages/grn/GrnDetailPage';
+import BudgetPage from './pages/BudgetPage';
+import CostCentersPage from './pages/CostCentersPage';
 import { useThemeStore } from './store/themeStore';
 import { useEffect } from 'react';
 
@@ -83,6 +85,8 @@ function App() {
             <Route path="grns/:id" element={<GrnDetailPage />} />
 
             <Route path="users" element={<UserListPage />} />
+            <Route path="cost-centers" element={<CostCentersPage />} />
+            <Route path="budget" element={<BudgetPage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="settings" element={<SettingsPage />} />
           </Route>

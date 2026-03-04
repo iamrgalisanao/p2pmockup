@@ -16,29 +16,32 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Create Core Departments
-        $ops = Department::create(['name' => 'Operations & Logistics', 'type' => 'department']);
-        $ops->update(['code' => 'OPS-01']);
+        $ops = Department::updateOrCreate(['name' => 'Operations & Logistics'], ['type' => 'department', 'code' => 'OPS-01']);
 
-        $hr = Department::create(['name' => 'Human Resources', 'type' => 'department']);
-        $it = Department::create(['name' => 'IT Infrastructure', 'type' => 'department']);
+        $hr = Department::updateOrCreate(['name' => 'Human Resources'], ['type' => 'department']);
+        $it = Department::updateOrCreate(['name' => 'IT Infrastructure'], ['type' => 'department']);
 
         // Projects
-        $prjA = Department::create(['name' => 'Riverdale Bridge Construction', 'type' => 'project', 'parent_id' => $ops->id]);
-        $prjB = Department::create(['name' => 'Solar Farm Phase 2', 'type' => 'project', 'parent_id' => $ops->id]);
+        $prjA = Department::updateOrCreate(['name' => 'Riverdale Bridge Construction'], [
+            'type' => 'project',
+            'parent_id' => $ops->id
+        ]);
+        $prjB = Department::updateOrCreate(['name' => 'Solar Farm Phase 2'], [
+            'type' => 'project',
+            'parent_id' => $ops->id
+        ]);
 
         // 2. Create Users for all roles
-        User::create([
+        User::updateOrCreate(['email' => 'admin@p2p.com'], [
             'name' => 'Super Admin',
-            'email' => 'admin@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'department_id' => $it->id,
             'is_active' => true,
         ]);
 
-        User::create([
+        User::updateOrCreate(['email' => 'james@p2p.com'], [
             'name' => 'James Requester',
-            'email' => 'james@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'requester',
             'department_id' => $ops->id,
@@ -46,27 +49,24 @@ class DatabaseSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        User::create([
+        User::updateOrCreate(['email' => 'sarah@p2p.com'], [
             'name' => 'Sarah Dept Head',
-            'email' => 'sarah@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'dept_head',
             'department_id' => $ops->id,
             'is_active' => true,
         ]);
 
-        User::create([
+        User::updateOrCreate(['email' => 'mike@p2p.com'], [
             'name' => 'Mike Proc Officer',
-            'email' => 'mike@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'proc_officer',
             'department_id' => $it->id,
             'is_active' => true,
         ]);
 
-        User::create([
+        User::updateOrCreate(['email' => 'elena@p2p.com'], [
             'name' => 'Elena Finance',
-            'email' => 'elena@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'finance_reviewer',
             'department_id' => $it->id,
@@ -74,36 +74,32 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // CRIS-Specific Roles from User Guide
-        User::create([
+        User::updateOrCreate(['email' => 'president@p2p.com'], [
             'name' => 'John President',
-            'email' => 'president@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'president',
             'department_id' => $ops->id,
             'is_active' => true,
         ]);
 
-        User::create([
+        User::updateOrCreate(['email' => 'accounting@p2p.com'], [
             'name' => 'Alice Accounting',
-            'email' => 'accounting@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'accounting_staff',
             'department_id' => $it->id,
             'is_active' => true,
         ]);
 
-        User::create([
+        User::updateOrCreate(['email' => 'supervisor@p2p.com'], [
             'name' => 'Bob Supervisor',
-            'email' => 'supervisor@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'accounting_supervisor',
             'department_id' => $it->id,
             'is_active' => true,
         ]);
 
-        User::create([
+        User::updateOrCreate(['email' => 'manager@p2p.com'], [
             'name' => 'Charlie Manager',
-            'email' => 'manager@p2p.com',
             'password' => Hash::make('password'),
             'role' => 'accounting_manager',
             'department_id' => $it->id,
@@ -111,9 +107,9 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 3. Create Sample Vendors
-        Vendor::create(['name' => 'Global Industrial Supplies', 'contact_person' => 'Robert Fox', 'email' => 'robert@global.com', 'accreditation_status' => 'active']);
-        Vendor::create(['name' => 'BuildRight Corp', 'contact_person' => 'Jane Smith', 'email' => 'jane@buildright.com', 'accreditation_status' => 'active']);
-        Vendor::create(['name' => 'SafePath Safety Gear', 'contact_person' => 'Bill Johnson', 'email' => 'bill@safepath.com', 'accreditation_status' => 'active']);
-        Vendor::create(['name' => 'Prime Hardware', 'accreditation_status' => 'suspended']);
+        Vendor::updateOrCreate(['email' => 'robert@global.com'], ['name' => 'Global Industrial Supplies', 'contact_person' => 'Robert Fox', 'accreditation_status' => 'active']);
+        Vendor::updateOrCreate(['email' => 'jane@buildright.com'], ['name' => 'BuildRight Corp', 'contact_person' => 'Jane Smith', 'accreditation_status' => 'active']);
+        Vendor::updateOrCreate(['email' => 'bill@safepath.com'], ['name' => 'SafePath Safety Gear', 'contact_person' => 'Bill Johnson', 'accreditation_status' => 'active']);
+        Vendor::updateOrCreate(['name' => 'Prime Hardware'], ['accreditation_status' => 'suspended']);
     }
 }
