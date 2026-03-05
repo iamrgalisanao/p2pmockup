@@ -63,7 +63,7 @@ const UserListPage = () => {
         mutationFn: (userId) => api.delete(`/users/${userId}`),
         onSuccess: () => {
             toast.success('User deleted successfully.');
-            queryClient.invalidateQueries(['users']);
+            queryClient.invalidateQueries({ queryKey: ['users'] });
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Delete failed.');
@@ -81,7 +81,7 @@ const UserListPage = () => {
         },
         onSuccess: () => {
             toast.success(editingUser ? 'User updated successfully.' : 'User created successfully.');
-            queryClient.invalidateQueries(['users']);
+            queryClient.invalidateQueries({ queryKey: ['users'] });
             closeModal();
         },
         onError: (error) => {
@@ -117,6 +117,7 @@ const UserListPage = () => {
     };
 
     const handleDelete = (user) => {
+        if (!user || user.id === localStorage.getItem('userId')) return; // Extra safety
         if (window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
             deleteMutation.mutate(user.id);
         }
@@ -134,12 +135,12 @@ const UserListPage = () => {
 
     return (
         <div className="view animate-fade-in">
-            <div className="header-top">
+            <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.875rem' }}>User Management</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Manage system access, team roles, and departments.</p>
                 </div>
-                <button className="btn btn-primary" onClick={() => openModal()} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #4338ca 100%)', border: 'none' }}>
+                <button type="button" className="btn btn-primary" onClick={() => openModal()} style={{ background: 'linear-gradient(135deg, var(--primary) 0%, #4338ca 100%)', border: 'none' }}>
                     <UserPlus size={18} />
                     <span>Invite New User</span>
                 </button>
@@ -222,10 +223,10 @@ const UserListPage = () => {
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                                            <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => openModal(user)}>
+                                            <button type="button" className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => openModal(user)}>
                                                 <Edit2 size={14} /> Edit
                                             </button>
-                                            <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }} onClick={() => handleDelete(user)}>
+                                            <button type="button" className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }} onClick={() => handleDelete(user)}>
                                                 <Trash2 size={14} /> Delete
                                             </button>
                                         </div>
@@ -246,7 +247,7 @@ const UserListPage = () => {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
+                <div className="modal-overlay show" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}>
                     <div className="glass-card animate-fade-in" style={{ width: '100%', maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
                         <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>{editingUser ? 'Edit User Configuration' : 'Create System User'}</h2>
