@@ -339,7 +339,7 @@ const RequisitionFormPage = () => {
 
                     <form onSubmit={handleSubmit}>
                         {step === 1 && (
-                            <div className="animate-fade-in">
+                            <div className="animate-fade-in" style={{ position: 'relative', zIndex: 50 }}>
                                 {/* STEP 1: SELECT REQUEST TYPE */}
                                 <div style={{ marginBottom: '2.5rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
