@@ -333,25 +333,27 @@ const UserListPage = () => {
                                     </select>
                                 </div>
 
-                                <div style={{ gridColumn: 'span 2' }}>
-                                    <label className="form-label">Project Access / Cost Centers</label>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: 8, border: '1px solid var(--border)', maxHeight: '200px', overflowY: 'auto' }}>
-                                        {departments?.filter(d => d.type === 'project').map(p => (
-                                            <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.project_ids?.includes(p.id)}
-                                                    onChange={() => toggleProject(p.id)}
-                                                    style={{ width: '1rem', height: '1rem' }}
-                                                />
-                                                {p.name}
-                                            </label>
-                                        ))}
-                                        {departments?.filter(d => d.type === 'project').length === 0 && (
-                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>No projects defined in system.</div>
-                                        )}
+                                {editingUser && (
+                                    <div style={{ gridColumn: 'span 2' }}>
+                                        <label className="form-label">Project Access / Cost Centers</label>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: 8, border: '1px solid var(--border)', maxHeight: '200px', overflowY: 'auto' }}>
+                                            {departments?.filter(d => d.type === 'project').map(p => (
+                                                <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={formData.project_ids?.includes(p.id)}
+                                                        onChange={() => toggleProject(p.id)}
+                                                        style={{ width: '1rem', height: '1rem' }}
+                                                    />
+                                                    {p.name}
+                                                </label>
+                                            ))}
+                                            {departments?.filter(d => d.type === 'project').length === 0 && (
+                                                <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>No projects defined in system.</div>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
+                                )}
 
                                 <div>
                                     <label className="form-label">Supervisor / Reports To</label>
