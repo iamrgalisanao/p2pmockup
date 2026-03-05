@@ -29,6 +29,7 @@ const UserListPage = () => {
         role: 'requester',
         department_id: '',
         supervisor_id: '',
+        project_ids: [],
         is_active: true
     });
 
@@ -99,6 +100,7 @@ const UserListPage = () => {
                 role: user.role,
                 department_id: user.department_id || '',
                 supervisor_id: user.supervisor_id || '',
+                project_ids: Array.isArray(user.project_ids) ? user.project_ids : [],
                 is_active: user.is_active === 1 || user.is_active === true
             });
         } else {
@@ -108,8 +110,9 @@ const UserListPage = () => {
                 email: '',
                 password: '',
                 role: 'requester',
-                department_id: departments?.[0]?.id || '',
+                department_id: departments?.find(d => d.type === 'department')?.id || '',
                 supervisor_id: '',
+                project_ids: [],
                 is_active: true
             });
         }
@@ -121,6 +124,16 @@ const UserListPage = () => {
         if (window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
             deleteMutation.mutate(user.id);
         }
+    };
+
+    const toggleProject = (projectId) => {
+        setFormData(prev => {
+            const current = prev.project_ids || [];
+            if (current.includes(projectId)) {
+                return { ...prev, project_ids: current.filter(id => id !== projectId) };
+            }
+            return { ...prev, project_ids: [...current, projectId] };
+        });
     };
 
     const closeModal = () => {
@@ -314,10 +327,30 @@ const UserListPage = () => {
                                         onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
                                     >
                                         <option value="">Select Department</option>
-                                        {departments?.map(d => (
+                                        {departments?.filter(d => d.type === 'department').map(d => (
                                             <option key={d.id} value={d.id}>{d.name}</option>
                                         ))}
                                     </select>
+                                </div>
+
+                                <div style={{ gridColumn: 'span 2' }}>
+                                    <label className="form-label">Project Access / Cost Centers</label>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: 8, border: '1px solid var(--border)', maxHeight: '200px', overflowY: 'auto' }}>
+                                        {departments?.filter(d => d.type === 'project').map(p => (
+                                            <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={formData.project_ids?.includes(p.id)}
+                                                    onChange={() => toggleProject(p.id)}
+                                                    style={{ width: '1rem', height: '1rem' }}
+                                                />
+                                                {p.name}
+                                            </label>
+                                        ))}
+                                        {departments?.filter(d => d.type === 'project').length === 0 && (
+                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>No projects defined in system.</div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div>
