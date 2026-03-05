@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../../services/api';
@@ -66,6 +66,17 @@ const RequisitionFormPage = () => {
 
     const [deptHeadSearch, setDeptHeadSearch] = useState('');
     const [isDeptHeadDropdownOpen, setIsDeptHeadDropdownOpen] = useState(false);
+    const deptHeadDropdownRef = useRef(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (deptHeadDropdownRef.current && !deptHeadDropdownRef.current.contains(event.target)) {
+                setIsDeptHeadDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Fetch Depts/Projects
     const { data: depts } = useQuery({
@@ -528,7 +539,7 @@ const RequisitionFormPage = () => {
                                                     )}
 
                                                     {/* Search Input */}
-                                                    <div style={{ position: 'relative' }}>
+                                                    <div style={{ position: 'relative' }} ref={deptHeadDropdownRef}>
                                                         <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                                         <input
                                                             type="text"
