@@ -11,7 +11,9 @@ import {
     Edit2,
     X,
     CheckCircle2,
-    Lock
+    Lock,
+    Trash2,
+    GitBranch
 } from 'lucide-react';
 
 const UserListPage = () => {
@@ -26,6 +28,7 @@ const UserListPage = () => {
         password: '',
         role: 'requester',
         department_id: '',
+        supervisor_id: '',
         is_active: true
     });
 
@@ -56,15 +59,25 @@ const UserListPage = () => {
         u.email.toLowerCase().includes(search.toLowerCase())
     );
 
+    const deleteMutation = useMutation({
+        mutationFn: (userId) => api.delete(`/users/${userId}`),
+        onSuccess: () => {
+            toast.success('User deleted successfully.');
+            queryClient.invalidateQueries(['users']);
+        },
+        onError: (error) => {
+            toast.error(error.response?.data?.message || 'Delete failed.');
+        }
+    });
+
     const saveMutation = useMutation({
         mutationFn: (data) => {
+            const payload = { ...data };
             if (editingUser) {
-                // Remove empty password so it isn't updated
-                const payload = { ...data };
                 if (!payload.password) delete payload.password;
                 return api.put(`/users/${editingUser.id}`, payload);
             }
-            return api.post('/users', data);
+            return api.post('/users', payload);
         },
         onSuccess: () => {
             toast.success(editingUser ? 'User updated successfully.' : 'User created successfully.');
@@ -72,7 +85,7 @@ const UserListPage = () => {
             closeModal();
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Setup failed. Please check your inputs.');
+            toast.error(error.response?.data?.message || 'Operation failed.');
         }
     });
 
@@ -85,6 +98,7 @@ const UserListPage = () => {
                 password: '',
                 role: user.role,
                 department_id: user.department_id || '',
+                supervisor_id: user.supervisor_id || '',
                 is_active: user.is_active === 1 || user.is_active === true
             });
         } else {
@@ -95,10 +109,17 @@ const UserListPage = () => {
                 password: '',
                 role: 'requester',
                 department_id: departments?.[0]?.id || '',
+                supervisor_id: '',
                 is_active: true
             });
         }
         setIsModalOpen(true);
+    };
+
+    const handleDelete = (user) => {
+        if (window.confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
+            deleteMutation.mutate(user.id);
+        }
     };
 
     const closeModal = () => {
@@ -144,7 +165,7 @@ const UserListPage = () => {
                         <tr>
                             <th>User Profile</th>
                             <th>Role Access</th>
-                            <th>Department</th>
+                            <th>Org Structure</th>
                             <th>Status Account</th>
                             <th style={{ textAlign: 'right' }}>Actions</th>
                         </tr>
@@ -180,9 +201,17 @@ const UserListPage = () => {
                                         </div>
                                     </td>
                                     <td>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
-                                            <Building size={14} />
-                                            <span>{user.department?.name || 'General / System'}</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)' }}>
+                                                <Building size={14} />
+                                                <span>{user.department?.name || 'General / System'}</span>
+                                            </div>
+                                            {user.supervisor && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.75rem' }}>
+                                                    <GitBranch size={12} />
+                                                    <span>Reports to: {user.supervisor.name}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </td>
                                     <td>
@@ -192,9 +221,14 @@ const UserListPage = () => {
                                         </span>
                                     </td>
                                     <td style={{ textAlign: 'right' }}>
-                                        <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => openModal(user)}>
-                                            <Edit2 size={14} /> Edit Profile
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                            <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => openModal(user)}>
+                                                <Edit2 size={14} /> Edit
+                                            </button>
+                                            <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.8rem', color: '#ef4444', borderColor: 'rgba(239, 68, 68, 0.2)' }} onClick={() => handleDelete(user)}>
+                                                <Trash2 size={14} /> Delete
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))
@@ -278,8 +312,23 @@ const UserListPage = () => {
                                         value={formData.department_id}
                                         onChange={(e) => setFormData({ ...formData, department_id: e.target.value })}
                                     >
+                                        <option value="">Select Department</option>
                                         {departments?.map(d => (
                                             <option key={d.id} value={d.id}>{d.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="form-label">Supervisor / Reports To</label>
+                                    <select
+                                        className="form-control"
+                                        value={formData.supervisor_id}
+                                        onChange={(e) => setFormData({ ...formData, supervisor_id: e.target.value })}
+                                    >
+                                        <option value="">No Supervisor (Top Level)</option>
+                                        {users?.filter(u => u.id !== editingUser?.id).map(u => (
+                                            <option key={u.id} value={u.id}>{u.name} ({u.role})</option>
                                         ))}
                                     </select>
                                 </div>

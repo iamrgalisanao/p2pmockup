@@ -20,7 +20,7 @@ class UserController extends Controller
     public function index()
     {
         $this->authorizeAdminOrPresident();
-        return response()->json(User::with('department')->orderBy('name')->get());
+        return response()->json(User::with(['department', 'supervisor'])->orderBy('name')->get());
     }
 
     public function store(Request $request)
@@ -32,6 +32,7 @@ class UserController extends Controller
             'password' => 'required|min:8',
             'role' => 'required|in:requester,dept_head,proc_officer,finance_reviewer,president,accounting_staff,accounting_supervisor,accounting_manager,admin',
             'department_id' => 'required|exists:departments,id',
+            'supervisor_id' => 'nullable|exists:users,id',
             'is_active' => 'boolean',
         ]);
 
@@ -55,6 +56,7 @@ class UserController extends Controller
             'email' => 'sometimes|email|unique:users,email,' . $user->id,
             'role' => 'sometimes|in:requester,dept_head,proc_officer,finance_reviewer,president,accounting_staff,accounting_supervisor,accounting_manager,admin',
             'department_id' => 'sometimes|exists:departments,id',
+            'supervisor_id' => 'nullable|exists:users,id',
             'is_active' => 'sometimes|boolean',
         ]);
 
@@ -64,6 +66,18 @@ class UserController extends Controller
 
         $user->update($request->except('password'));
 
-        return response()->json($user);
+        return response()->json($user->load(['department', 'supervisor']));
+    }
+
+    public function destroy(User $user)
+    {
+        $this->authorizeAdminOrPresident();
+
+        if ($user->id === auth()->id()) {
+            return response()->json(['message' => 'You cannot delete your own account.'], 403);
+        }
+
+        $user->delete();
+        return response()->json(null, 204);
     }
 }

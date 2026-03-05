@@ -22,6 +22,7 @@ class User extends Authenticatable
         'password',
         'role',
         'department_id',
+        'supervisor_id',
         'project_ids',
         'is_active',
     ];
@@ -33,6 +34,7 @@ class User extends Authenticatable
         'password' => 'hashed',
         'project_ids' => 'array',
         'is_active' => 'boolean',
+        'supervisor_id' => 'string',
     ];
 
     protected static function boot(): void
@@ -56,6 +58,16 @@ class User extends Authenticatable
     public function approvalSteps(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(ApprovalStep::class, 'approver_id');
+    }
+
+    public function supervisor(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
+
+    public function subordinates(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(User::class, 'supervisor_id');
     }
 
     // ── Role Helpers ───────────────────────────────────────────────────────
