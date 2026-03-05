@@ -481,8 +481,8 @@ const RequisitionFormPage = () => {
                                             <div className="form-group" style={{ gridColumn: 'span 2' }}>
                                                 <label>Checked By (Department Heads) <span style={{ color: 'var(--accent)' }}>*</span></label>
                                                 <div className="doc-selection-grid" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)' }}>
-                                                    {depts?.find(d => d.id === form.department_id)?.users?.filter(u => u.role === 'dept_head').map(user => (
-                                                        <label key={user.id} className="doc-selection-item">
+                                                    {depts?.flatMap(d => (d.users || []).filter(u => u.role === 'dept_head').map(u => ({ ...u, dept_name: d.name }))).map(user => (
+                                                        <label key={user.id} className="doc-selection-item" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
                                                             <input
                                                                 type="checkbox"
                                                                 checked={form.checked_by_ids.includes(user.id)}
@@ -492,13 +492,17 @@ const RequisitionFormPage = () => {
                                                                         : form.checked_by_ids.filter(id => id !== user.id);
                                                                     setForm({ ...form, checked_by_ids: ids });
                                                                 }}
+                                                                style={{ marginTop: '0.25rem' }}
                                                             />
-                                                            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-dark)' }}>{user.name}</span>
+                                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.2 }}>{user.name}</span>
+                                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>{user.dept_name}</span>
+                                                            </div>
                                                         </label>
                                                     ))}
-                                                    {(!form.department_id) && <p style={{ gridColumn: 'span 2', fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>Please select a department first.</p>}
-                                                    {form.department_id && depts?.find(d => d.id === form.department_id)?.users?.filter(u => u.role === 'dept_head').length === 0 && (
-                                                        <p style={{ gridColumn: 'span 2', fontSize: '0.8125rem', color: 'var(--danger)', textAlign: 'center', padding: '1rem' }}>No Department Heads found.</p>
+
+                                                    {depts?.flatMap(d => (d.users || []).filter(u => u.role === 'dept_head')).length === 0 && (
+                                                        <p style={{ gridColumn: 'span 2', fontSize: '0.8125rem', color: 'var(--danger)', textAlign: 'center', padding: '1rem' }}>No Department Heads found in the system.</p>
                                                     )}
                                                 </div>
                                             </div>
