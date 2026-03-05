@@ -196,82 +196,122 @@ const RequisitionDetailPage = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '2rem' }}>
                 <div className="tab-content">
                     {activeTab === 'overview' && (
-                        <div className="glass-card" style={{ padding: '2rem' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Request Type</label>
-                                    <div style={{ fontSize: '1rem', marginTop: '4px', fontWeight: 700, color: 'var(--primary)' }}>{r.request_type?.replace(/_/g, ' ').toUpperCase()}</div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Cost Center</label>
-                                    <div style={{ fontSize: '1rem', marginTop: '4px' }}>{r.cost_center || 'Not Specified'}</div>
-                                </div>
-                                {r.po_number && (
+                        <div className="animate-fade-in">
+                            <div className="glass-card" style={{ padding: '2rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem' }}>
                                     <div>
-                                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>PO Number</label>
-                                        <div style={{ fontSize: '1rem', marginTop: '4px' }}>{r.po_number}</div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Department</label>
+                                        <div style={{ fontSize: '1.125rem', marginTop: '4px', fontWeight: 600 }}>{r.department?.name}</div>
                                     </div>
-                                )}
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Department</label>
-                                    <div style={{ fontSize: '1rem', marginTop: '4px' }}>{r.department?.name}</div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Requested By</label>
-                                    <div style={{ fontSize: '1rem', marginTop: '4px' }}>{r.requester?.name}</div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Date Needed</label>
-                                    <div style={{ fontSize: '1rem', marginTop: '4px' }}>{new Date(r.date_needed).toLocaleDateString()}</div>
-                                </div>
-                                <div>
-                                    <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Estimated Total</label>
-                                    <div style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '4px', color: 'var(--primary)' }}>PHP {parseFloat(r.estimated_total).toLocaleString()}</div>
-                                </div>
-                            </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Title / Purpose</label>
+                                        <div style={{ fontSize: '1.125rem', marginTop: '4px', fontWeight: 600 }}>{r.title}</div>
+                                    </div>
 
-                            <div style={{ marginTop: '2rem' }}>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Particulars / Background</label>
-                                <p style={{ marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{r.particulars || 'No particulars provided.'}</p>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>{r.request_type} Number</label>
+                                        <div style={{ fontSize: '1.25rem', marginTop: '4px', fontWeight: 800, color: 'var(--primary)' }}>{r.ref_number}</div>
+                                    </div>
+
+                                    {(r.request_type === 'MRF' || r.request_type === 'JRF') && (
+                                        <div>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Funding Source</label>
+                                            <div style={{ fontSize: '1.25rem', marginTop: '4px', fontWeight: 800, color: 'var(--primary)' }}>{r.funding_source}</div>
+                                        </div>
+                                    )}
+
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Cost Center</label>
+                                        <div style={{ fontSize: '1rem', marginTop: '4px' }}>{r.cost_center || 'N/A'}</div>
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Date Needed</label>
+                                        <div style={{ fontSize: '1rem', marginTop: '4px' }}>{new Date(r.date_needed).toLocaleDateString()}</div>
+                                    </div>
+
+                                    <div style={{ gridColumn: 'span 2' }}>
+                                        <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Estimated Total</label>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, marginTop: '4px', color: 'var(--primary)' }}>₱ {parseFloat(r.estimated_total).toLocaleString()}</div>
+                                    </div>
+
+                                    {(r.request_type === 'MRF' || r.request_type === 'JRF') && (
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.5rem' }}>Checked By (Dept Heads)</label>
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                {r.approval_steps?.filter(s => s.step_label.includes('Checked By')).map(s => (
+                                                    <div key={s.id} style={{
+                                                        background: s.action === 'approved' ? 'var(--success-light)' : 'var(--bg-main)',
+                                                        padding: '6px 12px',
+                                                        borderRadius: '4px',
+                                                        fontSize: '0.8125rem',
+                                                        fontWeight: 600,
+                                                        color: s.action === 'approved' ? 'var(--success-dark)' : 'var(--text-dark)',
+                                                        border: `1px solid ${s.action === 'approved' ? 'var(--success-border)' : 'var(--border)'}`,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
+                                                    }}>
+                                                        {s.action === 'approved' && <CheckCircle size={14} />}
+                                                        {s.approver?.name || s.role_required.replace('_', ' ').toUpperCase()}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}
 
                     {activeTab === 'boq-items' && (
-                        <div className="table-container">
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Item Details</th>
-                                        <th>Unit</th>
-                                        <th>Qty</th>
-                                        <th>Est. Unit Cost</th>
-                                        <th>TAX Info</th>
-                                        <th>Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {r.line_items?.map(item => (
-                                        <tr key={item.id}>
-                                            <td>
-                                                <div style={{ fontWeight: 600 }}>{item.description}</div>
-                                                <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
-                                                    {item.gl_account_code && `GL: ${item.gl_account_code} `}
-                                                    {item.gl_category && `| Cat: ${item.gl_category}`}
-                                                </div>
-                                            </td>
-                                            <td>{item.unit}</td>
-                                            <td>{item.quantity}</td>
-                                            <td>PHP {parseFloat(item.estimated_unit_cost).toLocaleString()}</td>
-                                            <td>
-                                                <div style={{ fontSize: '0.75rem' }}>{item.vat_type}</div>
-                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{item.wht_type}</div>
-                                            </td>
-                                            <td style={{ fontWeight: 700 }}>PHP {parseFloat(item.line_total).toLocaleString()}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="animate-fade-in">
+                            <div className="glass-card" style={{ padding: '0' }}>
+                                <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)' }}>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-dark)' }}>Bill of Quantities (BOQ)</h3>
+                                </div>
+                                <div className="table-container" style={{ margin: '0', border: 'none', borderRadius: '0' }}>
+                                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                        <thead>
+                                            <tr>
+                                                <th style={{ textAlign: 'left', padding: '1rem 2rem' }}>Item Description & Allocation</th>
+                                                <th style={{ textAlign: 'center', padding: '1rem' }}>Unit</th>
+                                                <th style={{ textAlign: 'center', padding: '1rem' }}>Qty</th>
+                                                <th style={{ textAlign: 'right', padding: '1rem' }}>Est. Unit Cost</th>
+                                                <th style={{ textAlign: 'right', padding: '1rem' }}>TAX Info</th>
+                                                <th style={{ textAlign: 'right', padding: '1rem 2rem' }}>Line Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {r.line_items?.map(item => (
+                                                <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                    <td style={{ padding: '1rem 2rem' }}>
+                                                        <div style={{ fontWeight: 600, color: 'var(--text-dark)' }}>{item.description}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                                                            {item.gl_account_code && <span style={{ marginRight: '1rem' }}><strong>GL:</strong> {item.gl_account_code}</span>}
+                                                            {item.gl_category && <span><strong>Cat:</strong> {item.gl_category}</span>}
+                                                            {item.specification && <div style={{ marginTop: '2px', fontStyle: 'italic' }}>Specs: {item.specification}</div>}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ textAlign: 'center', padding: '1rem' }}>{item.unit}</td>
+                                                    <td style={{ textAlign: 'center', padding: '1rem' }}>{item.quantity}</td>
+                                                    <td style={{ textAlign: 'right', padding: '1rem' }}>PHP {parseFloat(item.estimated_unit_cost).toLocaleString()}</td>
+                                                    <td style={{ textAlign: 'right', padding: '1rem' }}>
+                                                        <div style={{ fontSize: '0.75rem' }}>{item.vat_type}</div>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{item.wht_type}</div>
+                                                    </td>
+                                                    <td style={{ textAlign: 'right', padding: '1rem 2rem', fontWeight: 700, color: 'var(--primary)' }}>PHP {parseFloat(item.line_total).toLocaleString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                        <tfoot>
+                                            <tr style={{ background: 'rgba(29, 67, 155, 0.03)' }}>
+                                                <td colSpan="5" style={{ textAlign: 'right', padding: '1.5rem 1rem', fontWeight: 800, color: 'var(--text-muted)', fontSize: '0.75rem', textTransform: 'uppercase' }}>Estimated Total:</td>
+                                                <td style={{ textAlign: 'right', padding: '1.5rem 2rem', fontWeight: 900, color: 'var(--primary)', fontSize: '1.25rem' }}>PHP {parseFloat(r.estimated_total).toLocaleString()}</td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     )}
 

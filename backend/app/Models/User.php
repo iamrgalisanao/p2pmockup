@@ -80,6 +80,14 @@ class User extends Authenticatable
     {
         return $this->role === 'requester';
     }
+    public function isFinanceHead(): bool
+    {
+        return $this->role === 'finance_head';
+    }
+    public function isCoo(): bool
+    {
+        return $this->role === 'coo';
+    }
 
     public function hasRole(string ...$roles): bool
     {
@@ -147,6 +155,18 @@ class User extends Authenticatable
                 'requisition:view',
                 'requisition:submit',
             ],
+            'finance_head' => [
+                'requisition:view',
+                'approval:act:finance_head',
+                'document:generate',
+                'report:export',
+            ],
+            'coo' => [
+                'requisition:view',
+                'approval:act:coo',
+                'document:generate',
+                'report:export',
+            ],
             default => [],
         };
     }
@@ -164,6 +184,8 @@ class User extends Authenticatable
                 'president',
                 'proc_officer',
                 'finance_reviewer',
+                'finance_head',
+                'coo',
                 'accounting_staff',
                 'accounting_supervisor',
                 'accounting_manager'

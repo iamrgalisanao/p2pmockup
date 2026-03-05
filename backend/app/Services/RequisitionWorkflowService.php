@@ -132,44 +132,87 @@ class RequisitionWorkflowService
         // 1. Clear old steps (in case of re-submission from 'returned')
         $requisition->approvalSteps()->delete();
 
-        // 2. Generate Approval Chain (SOP-03)
-        $stepNumber = 1;
-
-        // Step 1: Dept Head
-        ApprovalStep::create([
-            'requisition_id' => $requisition->id,
-            'step_number' => $stepNumber++,
-            'step_label' => 'Department Head Approval',
-            'role_required' => 'dept_head',
-            'sla_deadline' => Carbon::now()->addHours(24),
-        ]);
-
-        // Step 2: High Value Check (> 1M)
-        if ($requisition->estimated_total > 1000000) {
-            ApprovalStep::create([
-                'requisition_id' => $requisition->id,
-                'step_number' => $stepNumber++,
-                'step_label' => 'President/CEA Approval',
-                'role_required' => 'president',
-                'sla_deadline' => Carbon::now()->addHours(48),
-            ]);
+        // 2. Generate MRF Number if applicable
+        if ($requisition->request_type === 'MRF' && empty($requisition->ref_number)) {
+            $dept = $requisition->department;
+            $requisition->ref_number = Requisition::generateMrfNumber($dept ? $dept->code : 'GEN');
+            $requisition->save();
         }
 
-        // Step 3-5: Accounting Chain
-        $accountingSteps = [
-            ['label' => 'Accounting Staff - Documentation Check', 'role' => 'accounting_staff'],
-            ['label' => 'Accounting Supervisor - Budget Review', 'role' => 'accounting_supervisor'],
-            ['label' => 'Accounting Manager - Final Endorsement', 'role' => 'accounting_manager'],
-        ];
+        // 3. Generate Approval Chain (SOP-03)
+        $stepNumber = 1;
 
-        foreach ($accountingSteps as $s) {
+        if (in_array($requisition->request_type, ['MRF', 'JRF'])) {
+            // New Requirement Workflow for MRF/JRF:
+            // - Requested by (The requestor) -> This is the submission event
+            // - Checked By : Department Heads (Multiple)
+            $checkedByIds = $requisition->checked_by_ids ?? [];
+            foreach ($checkedByIds as $index => $approverId) {
+                ApprovalStep::create([
+                    'requisition_id' => $requisition->id,
+                    'step_number' => $stepNumber++,
+                    'step_label' => 'Checked By: Department Head (' . ($index + 1) . ')',
+                    'role_required' => 'dept_head',
+                    'approver_id' => $approverId, // User selected specific approver
+                    'sla_deadline' => Carbon::now()->addHours(24),
+                ]);
+            }
+
+            // - Noted By: Finance Head
             ApprovalStep::create([
                 'requisition_id' => $requisition->id,
                 'step_number' => $stepNumber++,
-                'step_label' => $s['label'],
-                'role_required' => $s['role'],
+                'step_label' => 'Noted By: Finance Head',
+                'role_required' => 'finance_head',
                 'sla_deadline' => Carbon::now()->addHours(24),
             ]);
+
+            // - Approved By: Chief Operating Officer
+            ApprovalStep::create([
+                'requisition_id' => $requisition->id,
+                'step_number' => $stepNumber++,
+                'step_label' => 'Approved By: Chief Operating Officer',
+                'role_required' => 'coo',
+                'sla_deadline' => Carbon::now()->addHours(24),
+            ]);
+        } else {
+            // Default Workflow (SOP-03)
+            // Step 1: Dept Head
+            ApprovalStep::create([
+                'requisition_id' => $requisition->id,
+                'step_number' => $stepNumber++,
+                'step_label' => 'Department Head Approval',
+                'role_required' => 'dept_head',
+                'sla_deadline' => Carbon::now()->addHours(24),
+            ]);
+
+            // Step 2: High Value Check (> 1M)
+            if ($requisition->estimated_total > 1000000) {
+                ApprovalStep::create([
+                    'requisition_id' => $requisition->id,
+                    'step_number' => $stepNumber++,
+                    'step_label' => 'President/CEA Approval',
+                    'role_required' => 'president',
+                    'sla_deadline' => Carbon::now()->addHours(48),
+                ]);
+            }
+
+            // Step 3-5: Accounting Chain
+            $accountingSteps = [
+                ['label' => 'Accounting Staff - Documentation Check', 'role' => 'accounting_staff'],
+                ['label' => 'Accounting Supervisor - Budget Review', 'role' => 'accounting_supervisor'],
+                ['label' => 'Accounting Manager - Final Endorsement', 'role' => 'accounting_manager'],
+            ];
+
+            foreach ($accountingSteps as $s) {
+                ApprovalStep::create([
+                    'requisition_id' => $requisition->id,
+                    'step_number' => $stepNumber++,
+                    'step_label' => $s['label'],
+                    'role_required' => $s['role'],
+                    'sla_deadline' => Carbon::now()->addHours(24),
+                ]);
+            }
         }
     }
 

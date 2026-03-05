@@ -44,6 +44,8 @@ const RequisitionFormPage = () => {
         date_needed: '',
         priority: 'normal',
         description: '',
+        funding_source: '',
+        checked_by_ids: [],
     });
 
     const [items, setItems] = useState([
@@ -74,6 +76,41 @@ const RequisitionFormPage = () => {
         enabled: isEdit,
     });
 
+    // Dynamic Ref Number and Funding Source Logic
+    useEffect(() => {
+        const updateDynamicFields = async () => {
+            if (!form.department_id) return;
+
+            // 1. Auto-set Funding Source
+            let funding = form.funding_source;
+            if (form.request_type === 'MRF') funding = 'OPEX';
+            else if (form.request_type === 'JRF') funding = 'CAPEX';
+
+            // 2. Fetch Next Ref Number if it's MRF/JRF and not editing existing
+            if (!isEdit && (form.request_type === 'MRF' || form.request_type === 'JRF')) {
+                try {
+                    const res = await api.get('/requisitions/next-ref', {
+                        params: { type: form.request_type, department_id: form.department_id }
+                    });
+
+                    if (form.po_number !== res.data.ref_number || form.funding_source !== funding) {
+                        setForm(prev => ({
+                            ...prev,
+                            funding_source: funding,
+                            po_number: res.data.ref_number
+                        }));
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch next ref:", err);
+                }
+            } else if (form.funding_source !== funding) {
+                setForm(prev => ({ ...prev, funding_source: funding }));
+            }
+        };
+
+        updateDynamicFields();
+    }, [form.department_id, form.request_type, isEdit]);
+
     // Handle initial load for edit mode
     useEffect(() => {
         if (existingPR) {
@@ -88,6 +125,9 @@ const RequisitionFormPage = () => {
                 date_needed: existingPR.date_needed.split('T')[0],
                 priority: existingPR.priority,
                 description: existingPR.description || '',
+                funding_source: existingPR.funding_source || '',
+                checked_by_ids: existingPR.checked_by_ids || [],
+                ref_number_preview: existingPR.ref_number // Add this to state if we want to show it
             });
             setItems(existingPR.line_items.map(i => ({
                 id: i.id,
@@ -163,9 +203,19 @@ const RequisitionFormPage = () => {
 
     const validateStep = (currentStep) => {
         if (currentStep === 1) {
-            if (!form.title || !form.department_id || !form.cost_center || !form.date_needed || !form.particulars) {
+            if (!form.title || !form.department_id || !form.cost_center || !form.date_needed) {
                 toast.error('Please fill in all required fields.');
                 return false;
+            }
+            if ((form.request_type === 'MRF' || form.request_type === 'JRF')) {
+                if (!form.funding_source) {
+                    toast.error('Funding Source is required for MRF/JRF.');
+                    return false;
+                }
+                if (form.checked_by_ids.length === 0) {
+                    toast.error('Please select at least one Department Head for "Checked By".');
+                    return false;
+                }
             }
         }
         if (currentStep === 2) {
@@ -274,15 +324,17 @@ const RequisitionFormPage = () => {
 
                     <form onSubmit={handleSubmit}>
                         {step === 1 && (
-                            <div className="animate-slide-in">
+                            <div className="animate-fade-in">
                                 {/* STEP 1: SELECT REQUEST TYPE */}
                                 <div style={{ marginBottom: '2.5rem' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                                         <label style={{ fontSize: '0.875rem', fontWeight: 800, color: 'var(--text-muted)', letterSpacing: '0.05em' }}>STEP 1: SELECT REQUEST TYPE</label>
                                     </div>
-                                    <div className="request-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
+                                    <div className="request-type-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.25rem' }}>
                                         {[
-                                            { id: 'po_item', label: 'PO ITEMS', icon: '📦', color: '#6366f1' },
+                                            { id: 'MRF', label: 'MRF (Material Requisition)', icon: '📦', color: '#1D439B', subtitle: 'Funding from OPEX' },
+                                            { id: 'JRF', label: 'JRF (Job Requisition)', icon: '🛠️', color: '#10b981', subtitle: 'Funding from CAPEX' },
+                                            { id: 'po_item', label: 'PO ITEMS', icon: '📦', color: '#1D439B' },
                                             { id: 'non_po_item', label: 'NON-PO ITEMS', icon: '🏢', color: '#10b981' },
                                             { id: 'cash_advance', label: 'CASH ADVANCE', icon: '💵', color: '#f59e0b' },
                                             { id: 'liquidation', label: 'LIQUIDATION', icon: '📝', color: '#ef4444' }
@@ -290,21 +342,29 @@ const RequisitionFormPage = () => {
                                             <div
                                                 key={t.id}
                                                 className="request-type-card"
-                                                onClick={() => setForm({ ...form, request_type: t.id })}
+                                                onClick={() => {
+                                                    let funding = form.funding_source;
+                                                    if (t.id === 'MRF') funding = 'OPEX';
+                                                    if (t.id === 'JRF') funding = 'CAPEX';
+                                                    setForm({ ...form, request_type: t.id, funding_source: funding });
+                                                }}
                                                 style={{
                                                     padding: '1.25rem',
-                                                    borderRadius: '16px',
+                                                    borderRadius: '12px',
                                                     border: form.request_type === t.id ? `2px solid ${t.color}` : '1px solid var(--border)',
                                                     background: form.request_type === t.id ? `${t.color}08` : 'var(--bg-card)',
                                                     cursor: 'pointer',
                                                     display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '1rem',
+                                                    flexDirection: 'column',
+                                                    gap: '0.5rem',
                                                     transition: 'all 0.3s ease'
                                                 }}
                                             >
-                                                <div style={{ fontSize: '1.5rem' }}>{t.icon}</div>
-                                                <div style={{ fontWeight: 800, fontSize: '0.75rem' }}>{t.label}</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    <div style={{ fontSize: '1.5rem' }}>{t.icon}</div>
+                                                    <div style={{ fontWeight: 800, fontSize: '0.875rem' }}>{t.label}</div>
+                                                </div>
+                                                {t.subtitle && <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>{t.subtitle}</div>}
                                             </div>
                                         ))}
                                     </div>
@@ -312,16 +372,8 @@ const RequisitionFormPage = () => {
 
                                 <div className="glass-card form-section" style={{ padding: '2rem' }}>
                                     <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', opacity: 0.7 }}>PRIMARY DETAILS</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                            <label>Title / Purpose <span style={{ color: 'var(--accent)' }}>*</span></label>
-                                            <input
-                                                type="text"
-                                                value={form.title}
-                                                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                                                required
-                                            />
-                                        </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem' }}>
+                                        {/* Row 1: Department (TL) and Title (TR) */}
                                         <div className="form-group">
                                             <label>Department <span style={{ color: 'var(--accent)' }}>*</span></label>
                                             <select
@@ -335,62 +387,122 @@ const RequisitionFormPage = () => {
                                                 ))}
                                             </select>
                                         </div>
+
                                         <div className="form-group">
-                                            <label>Project Scope</label>
-                                            <select
-                                                value={form.project_id}
-                                                onChange={(e) => setForm({ ...form, project_id: e.target.value })}
-                                            >
-                                                <option value="">None (General Admin)</option>
-                                                {depts?.filter(d => d.type === 'project').map(d => (
-                                                    <option key={d.id} value={d.id}>{d.name}</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Cost Center <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                            <label>Title / Purpose <span style={{ color: 'var(--accent)' }}>*</span></label>
                                             <input
                                                 type="text"
-                                                value={form.cost_center}
-                                                onChange={(e) => setForm({ ...form, cost_center: e.target.value })}
+                                                value={form.title}
+                                                onChange={(e) => setForm({ ...form, title: e.target.value })}
                                                 required
                                             />
                                         </div>
-                                        <div className="form-group">
-                                            <label>Date Needed <span style={{ color: 'var(--accent)' }}>*</span></label>
-                                            <input
-                                                type="date"
-                                                value={form.date_needed}
-                                                onChange={(e) => setForm({ ...form, date_needed: e.target.value })}
-                                                required
-                                            />
-                                        </div>
-                                        <div className="form-group">
-                                            <label>Priority Level</label>
-                                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                                <button
-                                                    type="button"
-                                                    className={`btn ${form.priority === 'normal' ? 'btn-primary' : 'btn-outline'}`}
-                                                    onClick={() => setForm({ ...form, priority: 'normal' })}
-                                                    style={{ flex: 1, fontSize: '0.75rem' }}
-                                                >Normal</button>
-                                                <button
-                                                    type="button"
-                                                    className={`btn ${form.priority === 'urgent' ? 'btn-primary' : 'btn-outline'}`}
-                                                    onClick={() => setForm({ ...form, priority: 'urgent' })}
-                                                    style={{ flex: 1, fontSize: '0.75rem', borderColor: form.priority === 'urgent' ? 'var(--danger)' : '' }}
-                                                >Urgent</button>
+
+                                        {/* Row 2: MRF/JRF Number and Funding Source (for MRF/JRF) or Date Needed and Cost Center (for PR) */}
+                                        {(form.request_type === 'MRF' || form.request_type === 'JRF') ? (
+                                            <>
+                                                <div className="form-group">
+                                                    <label>{form.request_type} Number (Auto-Generated)</label>
+                                                    <div style={{ position: 'relative' }}>
+                                                        <input
+                                                            type="text"
+                                                            disabled
+                                                            value={isEdit ? existingPR.ref_number : (form.po_number || 'Selecting dept...')}
+                                                            style={{ fontWeight: 700, background: 'var(--bg-main)', color: 'var(--primary)' }}
+                                                        />
+                                                        {!isEdit && !form.po_number && form.department_id && (
+                                                            <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)' }}>
+                                                                <div className="spinner-small" style={{ width: '14px', height: '14px', border: '2px solid rgba(0,0,0,0.1)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.6s linear infinite' }}></div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Funding Source</label>
+                                                    <div style={{
+                                                        padding: '0.75rem 1rem',
+                                                        background: 'var(--bg-main)',
+                                                        border: '1px solid var(--border)',
+                                                        borderRadius: 'var(--radius-sharp)',
+                                                        fontWeight: 700,
+                                                        color: 'var(--primary)',
+                                                        fontSize: '0.875rem'
+                                                    }}>
+                                                        {form.request_type === 'MRF' ? 'OPEX (Revenue)' : 'CAPEX (Capital)'}
+                                                    </div>
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Cost Center <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                                    <input
+                                                        type="text"
+                                                        value={form.cost_center}
+                                                        onChange={(e) => setForm({ ...form, cost_center: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Date Needed <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                                    <input
+                                                        type="date"
+                                                        value={form.date_needed}
+                                                        onChange={(e) => setForm({ ...form, date_needed: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="form-group">
+                                                    <label>Cost Center <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                                    <input
+                                                        type="text"
+                                                        value={form.cost_center}
+                                                        onChange={(e) => setForm({ ...form, cost_center: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+
+                                                <div className="form-group">
+                                                    <label>Date Needed <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                                    <input
+                                                        type="date"
+                                                        value={form.date_needed}
+                                                        onChange={(e) => setForm({ ...form, date_needed: e.target.value })}
+                                                        required
+                                                    />
+                                                </div>
+                                            </>
+                                        )}
+
+                                        {(form.request_type === 'MRF' || form.request_type === 'JRF') && (
+                                            <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                                <label>Checked By (Department Heads) <span style={{ color: 'var(--accent)' }}>*</span></label>
+                                                <div className="doc-selection-grid" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)' }}>
+                                                    {depts?.find(d => d.id === form.department_id)?.users?.filter(u => u.role === 'dept_head').map(user => (
+                                                        <label key={user.id} className="doc-selection-item">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={form.checked_by_ids.includes(user.id)}
+                                                                onChange={(e) => {
+                                                                    const ids = e.target.checked
+                                                                        ? [...form.checked_by_ids, user.id]
+                                                                        : form.checked_by_ids.filter(id => id !== user.id);
+                                                                    setForm({ ...form, checked_by_ids: ids });
+                                                                }}
+                                                            />
+                                                            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-dark)' }}>{user.name}</span>
+                                                        </label>
+                                                    ))}
+                                                    {(!form.department_id) && <p style={{ gridColumn: 'span 2', fontSize: '0.8125rem', color: 'var(--text-muted)', textAlign: 'center', padding: '1rem' }}>Please select a department first.</p>}
+                                                    {form.department_id && depts?.find(d => d.id === form.department_id)?.users?.filter(u => u.role === 'dept_head').length === 0 && (
+                                                        <p style={{ gridColumn: 'span 2', fontSize: '0.8125rem', color: 'var(--danger)', textAlign: 'center', padding: '1rem' }}>No Department Heads found.</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
-                                            <label>Particulars <span style={{ color: 'var(--accent)' }}>*</span></label>
-                                            <textarea
-                                                rows="3"
-                                                value={form.particulars}
-                                                onChange={(e) => setForm({ ...form, particulars: e.target.value })}
-                                                required
-                                            />
-                                        </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
@@ -487,7 +599,7 @@ const RequisitionFormPage = () => {
                                                     />
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', fontWeight: 800, fontSize: '1.125rem', color: 'var(--primary)' }}>
-                                                    PHP {item.line_total?.toLocaleString()}
+                                                    ₱{item.line_total?.toLocaleString()}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                     <button type="button" onClick={() => removeItem(index)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6 }} onMouseEnter={(e) => e.target.style.opacity = '1'} onMouseLeave={(e) => e.target.style.opacity = '0.6'}>
@@ -500,7 +612,7 @@ const RequisitionFormPage = () => {
 
                                     <div className="boq-total-section">
                                         <div className="boq-total-label">ESTIMATED TOTAL:</div>
-                                        <div className="boq-total-amount">PHP {calculateTotal().toLocaleString()}</div>
+                                        <div className="boq-total-amount">₱{calculateTotal().toLocaleString()}</div>
                                     </div>
                                 </div>
                             </div>
@@ -528,29 +640,92 @@ const RequisitionFormPage = () => {
                         )}
 
                         {step === 4 && (
-                            <div className="animate-slide-in">
+                            <div className="animate-fade-in">
                                 <div className="glass-card" style={{ padding: '2rem' }}>
-                                    <h3 style={{ marginBottom: '1.5rem' }}>Review Details</h3>
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
-                                        <div>
-                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>TITLE</div>
-                                            <div style={{ fontWeight: 700 }}>{form.title}</div>
+                                    <h3 style={{ marginBottom: '1.5rem', fontWeight: 800, letterSpacing: '0.05em' }}>REVIEW YOUR REQUEST</h3>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '2rem', marginBottom: '2.5rem' }}>
+                                        <div style={{ gridColumn: 'span 2' }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.25rem' }}>TITLE / PURPOSE</div>
+                                            <div style={{ fontWeight: 700, fontSize: '1.125rem' }}>{form.title}</div>
                                         </div>
                                         <div>
-                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>TYPE</div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.25rem' }}>REQUEST TYPE</div>
                                             <div style={{ fontWeight: 700 }}>{form.request_type?.toUpperCase()}</div>
                                         </div>
                                         <div>
-                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>TOTAL AMOUNT</div>
-                                            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.25rem' }}>₱{calculateTotal().toLocaleString()}</div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.25rem' }}>DEPARTMENT</div>
+                                            <div style={{ fontWeight: 700 }}>{depts?.find(d => d.id === form.department_id)?.name || 'N/A'}</div>
+                                        </div>
+
+                                        {(form.request_type === 'MRF' || form.request_type === 'JRF') && (
+                                            <>
+                                                <div>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.25rem' }}>FUNDING SOURCE</div>
+                                                    <div style={{ fontWeight: 700 }}>{form.funding_source}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.25rem' }}>COST CENTER</div>
+                                                    <div style={{ fontWeight: 700 }}>{form.cost_center}</div>
+                                                </div>
+                                                <div style={{ gridColumn: 'span 2' }}>
+                                                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.5rem' }}>CHECKED BY (DEPT HEADS)</div>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                                        {form.checked_by_ids.map(id => {
+                                                            const user = depts?.flatMap(d => d.users || []).find(u => u.id === id);
+                                                            return (
+                                                                <div key={id} style={{ background: 'var(--bg-main)', padding: '6px 12px', borderRadius: '4px', fontSize: '0.8125rem', fontWeight: 600, border: '1px solid var(--border)' }}>
+                                                                    {user?.name || 'Unknown'}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {form.checked_by_ids.length === 0 && <span style={{ color: 'var(--danger)', fontSize: '0.8125rem' }}>No Approvers Selected</span>}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+
+                                        <div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.25rem' }}>DATE NEEDED</div>
+                                            <div style={{ fontWeight: 700 }}>{form.date_needed || 'N/A'}</div>
                                         </div>
                                         <div>
-                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6 }}>ITEMS</div>
-                                            <div style={{ fontWeight: 700 }}>{items.length} line items</div>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.6, marginBottom: '0.25rem' }}>ESTIMATED TOTAL</div>
+                                            <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.25rem' }}>₱{calculateTotal().toLocaleString()}</div>
                                         </div>
                                     </div>
-                                    <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-                                        <strong>Ready to Submit?</strong> Once created, this will be saved as a Draft and you can then submit it for approval.
+
+                                    <div style={{ marginBottom: '2.5rem' }}>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.75rem' }}>ITEMS LIST</div>
+                                        <div className="boq-header" style={{
+                                            display: 'grid',
+                                            gridTemplateColumns: '2fr 80px 80px 120px 150px',
+                                            gap: '12px',
+                                            borderBottom: '1px solid var(--border)',
+                                            paddingBottom: '0.5rem',
+                                            marginBottom: '0.5rem'
+                                        }}>
+                                            <div style={{ fontSize: '0.65rem' }}>Description</div>
+                                            <div style={{ textAlign: 'center', fontSize: '0.65rem' }}>Unit</div>
+                                            <div style={{ textAlign: 'center', fontSize: '0.65rem' }}>Qty</div>
+                                            <div style={{ textAlign: 'right', fontSize: '0.65rem' }}>Price</div>
+                                            <div style={{ textAlign: 'right', fontSize: '0.65rem' }}>Total</div>
+                                        </div>
+                                        {items.map((item, index) => (
+                                            <div key={index} style={{
+                                                display: 'grid',
+                                                gridTemplateColumns: '2fr 80px 80px 120px 150px',
+                                                gap: '12px',
+                                                padding: '0.75rem 0',
+                                                borderBottom: '1px solid var(--border)',
+                                                fontSize: '0.875rem'
+                                            }}>
+                                                <div>{item.description}</div>
+                                                <div style={{ textAlign: 'center' }}>{item.unit}</div>
+                                                <div style={{ textAlign: 'center' }}>{item.quantity}</div>
+                                                <div style={{ textAlign: 'right' }}>₱{parseFloat(item.estimated_unit_cost || 0).toLocaleString()}</div>
+                                                <div style={{ textAlign: 'right', fontWeight: 700 }}>₱{item.line_total?.toLocaleString()}</div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>

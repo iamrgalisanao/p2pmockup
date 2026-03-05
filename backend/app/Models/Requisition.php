@@ -28,6 +28,8 @@ class Requisition extends Model
         'checklist_satisfied',
         'status',
         'hold_reason',
+        'funding_source',
+        'checked_by_ids',
         'sla_deadline',
         'sla_paused',
         'sla_paused_at',
@@ -38,6 +40,7 @@ class Requisition extends Model
         'date_needed' => 'date',
         'estimated_total' => 'decimal:4',
         'checklist_satisfied' => 'boolean',
+        'checked_by_ids' => 'array',
         'sla_deadline' => 'datetime',
         'sla_paused' => 'boolean',
         'sla_paused_at' => 'datetime',
@@ -171,5 +174,36 @@ class Requisition extends Model
             ->where('is_compliant', true)
             ->orderBy('grand_total', 'asc')
             ->first();
+    }
+
+    /**
+     * Generate Reference number: {TYPE}-{DEPTCODE}-{XXX}
+     */
+    public static function generateRefNumber(string $type, string $deptName): string
+    {
+        $deptCode = strtoupper(substr(preg_replace('/[^A-Za-z0-0]/', '', $deptName), 0, 3));
+        $prefix = "{$type}-{$deptCode}-";
+
+        $last = self::where('ref_number', 'like', $prefix . '%')
+            ->where('request_type', $type)
+            ->orderBy('ref_number', 'desc')
+            ->first();
+
+        if (!$last) {
+            return $prefix . "001";
+        }
+
+        // Extract the last 3 digits
+        $lastRef = $last->ref_number;
+        $parts = explode('-', $lastRef);
+        $lastNumStr = end($parts);
+
+        if (!is_numeric($lastNumStr)) {
+            return $prefix . "001";
+        }
+
+        $nextNumber = str_pad((int) $lastNumStr + 1, 3, '0', STR_PAD_LEFT);
+
+        return $prefix . $nextNumber;
     }
 }

@@ -24,11 +24,11 @@ class RequisitionController extends Controller
             'title' => 'required|string|max:255',
             'request_type' => 'required|string',
             'cost_center' => 'required|string',
-            'particulars' => 'required|string',
+            'particulars' => 'nullable|string',
             'department_id' => 'required|exists:departments,id',
             'project_id' => 'nullable|exists:departments,id',
             'date_needed' => 'required|date|after:today',
-            'priority' => 'required|in:normal,urgent',
+            'priority' => 'nullable|in:normal,urgent',
             'description' => 'nullable|string',
             'items' => 'required|array|min:1',
             'items.*.description' => 'required|string',
@@ -38,13 +38,20 @@ class RequisitionController extends Controller
             'items.*.gl_category' => 'nullable|string',
             'items.*.vat_type' => 'nullable|string',
             'items.*.wht_type' => 'nullable|string',
+            'funding_source' => 'nullable|string|in:OPEX,CAPEX',
+            'checked_by_ids' => 'nullable|array',
         ]);
 
         $user = $request->user();
 
         $requisition = DB::transaction(function () use ($request, $user) {
+            $dept = \App\Models\Department::find($request->department_id);
+            $refNumber = ($request->request_type === 'MRF' || $request->request_type === 'JRF')
+                ? Requisition::generateRefNumber($request->request_type, $dept->name)
+                : 'PR-' . date('Y') . '-' . strtoupper(Str::random(5));
+
             $r = Requisition::create([
-                'ref_number' => 'PR-' . date('Y') . '-' . strtoupper(Str::random(5)),
+                'ref_number' => $refNumber,
                 'title' => $request->title,
                 'request_type' => $request->request_type,
                 'po_number' => $request->po_number,
@@ -56,6 +63,8 @@ class RequisitionController extends Controller
                 'date_needed' => $request->date_needed,
                 'priority' => $request->priority,
                 'description' => $request->description,
+                'funding_source' => $request->funding_source,
+                'checked_by_ids' => $request->checked_by_ids,
                 'status' => 'draft',
                 'version' => 1,
             ]);
@@ -112,9 +121,9 @@ class RequisitionController extends Controller
             'title' => 'sometimes|string|max:255',
             'request_type' => 'sometimes|string',
             'cost_center' => 'sometimes|string',
-            'particulars' => 'sometimes|string',
+            'particulars' => 'nullable|string',
             'date_needed' => 'sometimes|date|after:today',
-            'priority' => 'sometimes|in:normal,urgent',
+            'priority' => 'nullable|in:normal,urgent',
             'description' => 'nullable|string',
             'items' => 'sometimes|array|min:1',
             'items.*.description' => 'sometimes|required|string',
@@ -124,6 +133,8 @@ class RequisitionController extends Controller
             'items.*.gl_category' => 'nullable|string',
             'items.*.vat_type' => 'nullable|string',
             'items.*.wht_type' => 'nullable|string',
+            'funding_source' => 'sometimes|nullable|string|in:OPEX,CAPEX',
+            'checked_by_ids' => 'sometimes|nullable|array',
         ]);
 
         $before = $requisition->toArray();
@@ -137,7 +148,9 @@ class RequisitionController extends Controller
                 'cost_center',
                 'date_needed',
                 'priority',
-                'description'
+                'description',
+                'funding_source',
+                'checked_by_ids'
             ]));
 
             if ($request->has('items')) {
@@ -201,32 +214,27 @@ class RequisitionController extends Controller
             return response()->json(['message' => 'Insufficient budget for this requisition.'], 422);
         }
 
-        DB::transaction(function () use ($requisition, $budgetService) {
-            $requisition->status = 'submitted';
-            $requisition->save();
+        try {
+            $workflow = new \App\Services\RequisitionWorkflowService();
+            $workflow->transition($requisition, 'submitted');
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
-            // Pre-Encumber funds in the ledger
-            $budgetService->preEncumber($requisition);
+        return response()->json(['message' => 'Requisition submitted for approval.', 'requisition' => $requisition->load('approvalSteps')]);
+    }
 
-            // Clear any old/existing steps if re-submitting from returned/draft
-            $requisition->approvalSteps()->delete();
+    public function nextRefNumber(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|string|in:MRF,JRF,PO_ITEM,NON_PO_ITEM',
+            'department_id' => 'required|exists:departments,id',
+        ]);
 
-            $stepNumber = 1;
+        $dept = \App\Models\Department::find($request->department_id);
+        $ref = Requisition::generateRefNumber($request->type, $dept->name);
 
-
-            // 1. Dept Head
-            ApprovalStep::create([
-                'requisition_id' => $requisition->id,
-                'step_number' => $stepNumber++,
-                'step_label' => 'Department Head Approval',
-                'role_required' => 'dept_head',
-                'sla_deadline' => now()->addHours(24),
-            ]);
-
-            AuditLog::record($requisition, 'submitted');
-        });
-
-        return response()->json(['message' => 'Requisition submitted for approval.', 'requisition' => $requisition]);
+        return response()->json(['ref_number' => $ref]);
     }
 
     private function authorizeScope(Requisition $r)

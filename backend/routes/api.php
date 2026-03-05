@@ -49,6 +49,7 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\EnsureUserIsActive'])->g
     Route::apiResource('vendors', VendorController::class);
 
     // Requisitions
+    Route::get('/requisitions/next-ref', [RequisitionController::class, 'nextRefNumber']);
     Route::apiResource('requisitions', RequisitionController::class);
     Route::prefix('requisitions/{requisition}')->group(function () {
         Route::post('/submit', [RequisitionController::class, 'submit']);

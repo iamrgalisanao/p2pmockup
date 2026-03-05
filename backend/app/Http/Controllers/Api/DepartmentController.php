@@ -10,7 +10,7 @@ class DepartmentController extends Controller
 {
     public function index()
     {
-        return response()->json(Department::with('parent')->orderBy('name')->get());
+        return response()->json(Department::with(['parent', 'users'])->orderBy('name')->get());
     }
 
     public function store(Request $request)
