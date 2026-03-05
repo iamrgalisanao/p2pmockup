@@ -64,6 +64,9 @@ const RequisitionFormPage = () => {
         }
     ]);
 
+    const [deptHeadSearch, setDeptHeadSearch] = useState('');
+    const [isDeptHeadDropdownOpen, setIsDeptHeadDropdownOpen] = useState(false);
+
     // Fetch Depts/Projects
     const { data: depts } = useQuery({
         queryKey: ['departments'],
@@ -145,6 +148,18 @@ const RequisitionFormPage = () => {
             })));
         }
     }, [existingPR]);
+
+    const allDeptHeads = (depts || []).flatMap(d =>
+        (d.users || [])
+            .filter(u => u.role === 'dept_head')
+            .map(u => ({ ...u, dept_name: d.name || 'Unknown Dept' }))
+    );
+
+    const safeSearch = (deptHeadSearch || '').toLowerCase();
+    const filteredDeptHeads = allDeptHeads.filter(user =>
+        (user.name || '').toLowerCase().includes(safeSearch) ||
+        (user.dept_name || '').toLowerCase().includes(safeSearch)
+    );
 
     const mutation = useMutation({
         mutationFn: async (payload) => {
@@ -480,29 +495,82 @@ const RequisitionFormPage = () => {
                                         {(form.request_type === 'MRF' || form.request_type === 'JRF') && (
                                             <div className="form-group" style={{ gridColumn: 'span 2' }}>
                                                 <label>Checked By (Department Heads) <span style={{ color: 'var(--accent)' }}>*</span></label>
-                                                <div className="doc-selection-grid" style={{ background: 'var(--bg-main)', border: '1px solid var(--border)' }}>
-                                                    {depts?.flatMap(d => (d.users || []).filter(u => u.role === 'dept_head').map(u => ({ ...u, dept_name: d.name }))).map(user => (
-                                                        <label key={user.id} className="doc-selection-item" style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                                            <input
-                                                                type="checkbox"
-                                                                checked={form.checked_by_ids.includes(user.id)}
-                                                                onChange={(e) => {
-                                                                    const ids = e.target.checked
-                                                                        ? [...form.checked_by_ids, user.id]
-                                                                        : form.checked_by_ids.filter(id => id !== user.id);
-                                                                    setForm({ ...form, checked_by_ids: ids });
-                                                                }}
-                                                                style={{ marginTop: '0.25rem' }}
-                                                            />
-                                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-dark)', lineHeight: 1.2 }}>{user.name}</span>
-                                                                <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>{user.dept_name}</span>
-                                                            </div>
-                                                        </label>
-                                                    ))}
 
-                                                    {depts?.flatMap(d => (d.users || []).filter(u => u.role === 'dept_head')).length === 0 && (
-                                                        <p style={{ gridColumn: 'span 2', fontSize: '0.8125rem', color: 'var(--danger)', textAlign: 'center', padding: '1rem' }}>No Department Heads found in the system.</p>
+                                                <div style={{ position: 'relative' }}>
+                                                    {/* Selected Pills */}
+                                                    {form.checked_by_ids.length > 0 && (
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                                            {form.checked_by_ids.map(id => {
+                                                                const user = allDeptHeads.find(u => u.id === id);
+                                                                if (!user) return null;
+                                                                return (
+                                                                    <div key={id} style={{
+                                                                        background: 'var(--primary-light)', color: 'var(--primary-dark)', padding: '4px 10px',
+                                                                        borderRadius: '16px', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
+                                                                        border: '1px solid currentColor'
+                                                                    }}>
+                                                                        {user.name}
+                                                                        <button type="button" onClick={() => setForm(prev => ({ ...prev, checked_by_ids: prev.checked_by_ids.filter(i => i !== id) }))} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0, display: 'flex' }}>
+                                                                            <X size={14} />
+                                                                        </button>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Search Input */}
+                                                    <div style={{ position: 'relative' }}>
+                                                        <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search department heads by name or department..."
+                                                            value={deptHeadSearch}
+                                                            onChange={(e) => {
+                                                                setDeptHeadSearch(e.target.value);
+                                                                setIsDeptHeadDropdownOpen(true);
+                                                            }}
+                                                            onFocus={() => setIsDeptHeadDropdownOpen(true)}
+                                                            style={{ paddingLeft: '2.5rem', width: '100%' }}
+                                                        />
+                                                    </div>
+
+                                                    {/* Dropdown Box */}
+                                                    {isDeptHeadDropdownOpen && (
+                                                        <div style={{
+                                                            position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '4px',
+                                                            background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius)',
+                                                            boxShadow: 'var(--shadow-md)', zIndex: 50, maxHeight: '250px', overflowY: 'auto'
+                                                        }}>
+                                                            <div style={{ padding: '0.5rem', display: 'flex', justifyContent: 'flex-end', borderBottom: '1px solid var(--border)', background: 'var(--bg-main)', position: 'sticky', top: 0 }}>
+                                                                <button type="button" onClick={() => setIsDeptHeadDropdownOpen(false)} style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '4px 8px', borderRadius: '4px', color: 'var(--text-dark)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                    <X size={14} /> Close
+                                                                </button>
+                                                            </div>
+                                                            {filteredDeptHeads.map(user => (
+                                                                <label key={user.id} className="dropdown-hover" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', background: form.checked_by_ids.includes(user.id) ? 'var(--primary-light)' : 'transparent', transition: 'background 0.2s' }}>
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={form.checked_by_ids.includes(user.id)}
+                                                                        onChange={(e) => {
+                                                                            const ids = e.target.checked
+                                                                                ? [...form.checked_by_ids, user.id]
+                                                                                : form.checked_by_ids.filter(id => id !== user.id);
+                                                                            setForm({ ...form, checked_by_ids: ids });
+                                                                            // we can keep it open for multi select
+                                                                        }}
+                                                                        style={{ width: 'auto', margin: 0 }}
+                                                                    />
+                                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-dark)' }}>{user.name}</span>
+                                                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>{user.dept_name}</span>
+                                                                    </div>
+                                                                </label>
+                                                            ))}
+                                                            {filteredDeptHeads.length === 0 && (
+                                                                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>No department heads found matching '{deptHeadSearch}'</div>
+                                                            )}
+                                                        </div>
                                                     )}
                                                 </div>
                                             </div>
