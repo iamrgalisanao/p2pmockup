@@ -42,8 +42,9 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\EnsureUserIsActive'])->g
     // Departments
     Route::apiResource('departments', DepartmentController::class);
 
-    // Users (admin only)
-    Route::apiResource('users', UserController::class);
+    // Users
+    Route::get('/users/search-dept-heads', [UserController::class, 'searchDeptHeads']);
+    Route::apiResource('users', UserController::class); // admin only inside controller
 
     // Vendors
     Route::apiResource('vendors', VendorController::class);

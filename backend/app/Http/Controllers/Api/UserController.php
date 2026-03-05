@@ -23,6 +23,26 @@ class UserController extends Controller
         return response()->json(User::with(['department', 'supervisor'])->orderBy('name')->get());
     }
 
+    public function searchDeptHeads(Request $request)
+    {
+        $query = $request->input('q', '');
+
+        $users = User::with('department')
+            ->where('role', 'dept_head');
+
+        if (!empty($query)) {
+            $users->where(function ($q) use ($query) {
+                $q->where('name', 'LIKE', '%' . $query . '%')
+                    ->orWhereHas('department', function ($q2) use ($query) {
+                        $q2->where('name', 'LIKE', '%' . $query . '%');
+                    });
+            });
+        }
+
+        // Limit results to 20 for performance
+        return response()->json($users->orderBy('name')->take(20)->get());
+    }
+
     public function store(Request $request)
     {
         $this->authorizeAdminOrPresident();

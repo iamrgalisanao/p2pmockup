@@ -155,11 +155,19 @@ const RequisitionFormPage = () => {
             .map(u => ({ ...u, dept_name: d.name || 'Unknown Dept' }))
     );
 
-    const safeSearch = (deptHeadSearch || '').toLowerCase();
-    const filteredDeptHeads = allDeptHeads.filter(user =>
-        (user.name || '').toLowerCase().includes(safeSearch) ||
-        (user.dept_name || '').toLowerCase().includes(safeSearch)
-    );
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedSearch(deptHeadSearch), 300);
+        return () => clearTimeout(timer);
+    }, [deptHeadSearch]);
+
+    const { data: searchedDeptHeads, isFetching: isSearching } = useQuery({
+        queryKey: ['deptHeadsSearch', debouncedSearch],
+        queryFn: () => api.get('/users/search-dept-heads', { params: { q: debouncedSearch } }).then(res => res.data),
+        enabled: debouncedSearch.length > 0,
+        staleTime: 60000,
+    });
 
     const mutation = useMutation({
         mutationFn: async (payload) => {
@@ -547,28 +555,38 @@ const RequisitionFormPage = () => {
                                                                     <X size={14} /> Close
                                                                 </button>
                                                             </div>
-                                                            {filteredDeptHeads.map(user => (
-                                                                <label key={user.id} className="dropdown-hover" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', background: form.checked_by_ids.includes(user.id) ? 'var(--primary-light)' : 'transparent', transition: 'background 0.2s' }}>
-                                                                    <input
-                                                                        type="checkbox"
-                                                                        checked={form.checked_by_ids.includes(user.id)}
-                                                                        onChange={(e) => {
-                                                                            const ids = e.target.checked
-                                                                                ? [...form.checked_by_ids, user.id]
-                                                                                : form.checked_by_ids.filter(id => id !== user.id);
-                                                                            setForm({ ...form, checked_by_ids: ids });
-                                                                            // we can keep it open for multi select
-                                                                        }}
-                                                                        style={{ width: 'auto', margin: 0 }}
-                                                                    />
-                                                                    <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                                                        <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-dark)' }}>{user.name}</span>
-                                                                        <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>{user.dept_name}</span>
-                                                                    </div>
-                                                                </label>
-                                                            ))}
-                                                            {filteredDeptHeads.length === 0 && (
-                                                                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>No department heads found matching '{deptHeadSearch}'</div>
+                                                            {!debouncedSearch ? (
+                                                                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                                                                    Start typing to search department heads...
+                                                                </div>
+                                                            ) : isSearching ? (
+                                                                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                                                                    Searching...
+                                                                </div>
+                                                            ) : searchedDeptHeads && searchedDeptHeads.length > 0 ? (
+                                                                searchedDeptHeads.map(user => (
+                                                                    <label key={user.id} className="dropdown-hover" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem', cursor: 'pointer', borderBottom: '1px solid var(--border)', background: form.checked_by_ids.includes(user.id) ? 'var(--primary-light)' : 'transparent', transition: 'background 0.2s' }}>
+                                                                        <input
+                                                                            type="checkbox"
+                                                                            checked={form.checked_by_ids.includes(user.id)}
+                                                                            onChange={(e) => {
+                                                                                const ids = e.target.checked
+                                                                                    ? [...form.checked_by_ids, user.id]
+                                                                                    : form.checked_by_ids.filter(id => id !== user.id);
+                                                                                setForm({ ...form, checked_by_ids: ids });
+                                                                            }}
+                                                                            style={{ width: 'auto', margin: 0 }}
+                                                                        />
+                                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                                            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-dark)' }}>{user.name}</span>
+                                                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 500 }}>{user.department?.name || 'Unknown Dept'}</span>
+                                                                        </div>
+                                                                    </label>
+                                                                ))
+                                                            ) : (
+                                                                <div style={{ padding: '1rem', textAlign: 'center', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
+                                                                    No department heads found matching '{deptHeadSearch}'
+                                                                </div>
                                                             )}
                                                         </div>
                                                     )}
