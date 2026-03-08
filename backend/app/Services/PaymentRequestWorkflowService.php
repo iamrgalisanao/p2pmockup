@@ -38,20 +38,17 @@ class PaymentRequestWorkflowService
                 'user_id' => $user?->id
             ]);
 
-            // Notify Requester (Stub for now, reuse existing notification)
-            // if ($oldStatus !== $newStatus && $newStatus !== 'draft' && $paymentRequest->requester) {
-            //     Mail::to($paymentRequest->requester)->send(
-            //         new StatusChangeNotification($paymentRequest, $oldStatus, $newStatus, $options['comment'] ?? null)
-            //     );
-            // }
+            // Notify Requester
+            if ($oldStatus !== $newStatus && $newStatus !== 'draft' && $paymentRequest->requestedBy) {
+                Mail::to($paymentRequest->requestedBy->email)->send(
+                    new \App\Mail\PaymentRequestStatusNotification($paymentRequest, $oldStatus, $newStatus, $options['comment'] ?? null)
+                );
+            }
 
             return $paymentRequest;
         });
     }
 
-    /**
-     * Handle initial submission of a Payment Request.
-     */
     public function submit(PaymentRequest $paymentRequest)
     {
         return DB::transaction(function () use ($paymentRequest) {
@@ -60,13 +57,44 @@ class PaymentRequestWorkflowService
             }
 
             if ($paymentRequest->lineItems()->count() === 0) {
-                throw new Exception("Requisition must have at least one item.");
+                throw new Exception("Payment Request must have at least one item.");
             }
 
-            // Generate Approval Chain
+            // Move to accounting_validated gate (Rule R-14)
+            $this->transition($paymentRequest, 'accounting_validated');
+
+            return $paymentRequest;
+        });
+    }
+
+    /**
+     * Accounting validation gate. Starts the approval chain.
+     */
+    public function validateByAccounting(PaymentRequest $paymentRequest, array $options = [])
+    {
+        return DB::transaction(function () use ($paymentRequest, $options) {
+            if ($paymentRequest->status !== 'accounting_validated') {
+                throw new Exception("Payment Request must be in 'accounting_validated' state.");
+            }
+
+            $user = Auth::user();
+
+            $paymentRequest->update([
+                'accounting_validated_by' => $user->id,
+                'accounting_validated_at' => now(),
+                'status' => 'under_review'
+            ]);
+
+            // 1. Generate Approval Chain
             $this->generateApprovalChain($paymentRequest);
 
-            $this->transition($paymentRequest, 'submitted');
+            // 2. Notify First Approver
+            $this->notifyNextApprover($paymentRequest);
+
+            // 3. Log Audit
+            AuditLog::record($paymentRequest, 'accounting_validated', null, [
+                'user_id' => $user->id
+            ]);
 
             return $paymentRequest;
         });
@@ -77,8 +105,8 @@ class PaymentRequestWorkflowService
      */
     private function generateApprovalChain(PaymentRequest $paymentRequest)
     {
-        // Clear existing pending/cancelled steps
-        $paymentRequest->approvals()->where('action', 'pending')->delete();
+        // Clear existing steps
+        $paymentRequest->approvals()->delete();
 
         $stepNumber = 1;
 
@@ -162,6 +190,44 @@ class PaymentRequestWorkflowService
             // Record Actual Spend in Budget Ledger
             $budgetService = new \App\Services\BudgetService();
             $budgetService->actualize($paymentRequest);
+        } else {
+            // Notify next approver sequentially
+            $this->notifyNextApprover($paymentRequest);
         }
+    }
+
+    /**
+     * Finds the next pending approval step and notifies the relevant users.
+     */
+    private function notifyNextApprover(PaymentRequest $paymentRequest)
+    {
+        $nextStep = $paymentRequest->approvals()
+            ->where('action', 'pending')
+            ->orderBy('step_number')
+            ->first();
+
+        if (!$nextStep) {
+            return;
+        }
+
+        // Find users with the required role
+        $approvers = \App\Models\User::where('role', $nextStep->role_required)
+            ->where('is_active', true)
+            ->where(function ($q) use ($paymentRequest) {
+                // Respect department scoping
+                $q->where('department_id', $paymentRequest->department_id)
+                    ->orWhere('role', 'admin')
+                    ->orWhere('role', 'president');
+            })
+            ->get();
+
+        foreach ($approvers as $user) {
+            Mail::to($user->email)->send(new \App\Mail\PaymentRequestApproverNotification($paymentRequest, $nextStep));
+        }
+
+        AuditLog::record($paymentRequest, 'approver_notified', null, [
+            'step' => $nextStep->step_label,
+            'role' => $nextStep->role_required
+        ]);
     }
 }

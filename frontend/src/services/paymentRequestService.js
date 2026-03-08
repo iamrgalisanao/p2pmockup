@@ -7,5 +7,6 @@ export const paymentRequestService = {
     update: (id, data) => api.put(`payment-requests/${id}`, data),
     delete: (id) => api.delete(`payment-requests/${id}`),
     submit: (id) => api.post(`payment-requests/${id}/submit`),
+    accountingValidate: (id) => api.post(`payment-requests/${id}/accounting-validate`),
     act: (requestId, stepId, data) => api.post(`payment-requests/${requestId}/approvals/${stepId}/act`, data),
 };

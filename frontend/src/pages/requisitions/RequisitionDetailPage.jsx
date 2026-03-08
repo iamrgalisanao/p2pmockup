@@ -35,7 +35,7 @@ const RequisitionDetailPage = () => {
     const submitMutation = useMutation({
         mutationFn: () => api.post(`/requisitions/${id}/submit`),
         onSuccess: () => {
-            toast.success('Submitted for approval!');
+            toast.success('Submitted for processing (SAP Entry Gate).');
             queryClient.invalidateQueries({ queryKey: ['requisition', id] });
             queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
         }
@@ -106,6 +106,32 @@ const RequisitionDetailPage = () => {
         }
     });
 
+    const [sapPreview, setSapPreview] = useState(null);
+    const fetchSapMutation = useMutation({
+        mutationFn: () => api.get(`/requisitions/${id}/sap/fetch`),
+        onSuccess: (res) => {
+            setSapPreview(res.data);
+            toast.success('SAP Details Fetched.');
+        }
+    });
+
+    const verifySapMutation = useMutation({
+        mutationFn: (sapRef) => api.post(`/requisitions/${id}/sap/verify`, { external_sap_ref: sapRef }),
+        onSuccess: () => {
+            toast.success('Verification confirmed! Proceeding to approval.');
+            setSapPreview(null);
+            queryClient.invalidateQueries({ queryKey: ['requisition', id] });
+        }
+    });
+
+    const reactivateMutation = useMutation({
+        mutationFn: () => api.post(`/requisitions/${id}/reactivate`),
+        onSuccess: (res) => {
+            toast.success('Requisition reactivated and historical data transferred.');
+            navigate(`/requisitions/${res.data.new_id}`);
+        }
+    });
+
     const { data: vendors } = useQuery({
         queryKey: ['vendors'],
         queryFn: () => api.get('/vendors').then(res => res.data),
@@ -120,10 +146,20 @@ const RequisitionDetailPage = () => {
             {/* Header Bar */}
             <div className="detail-header">
                 <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>{r.ref_number}</span>
-                        <span className={`badge badge-${r.status}`}>{r.status.replace('_', ' ')}</span>
-                        {r.priority === 'urgent' && <span className="badge badge-urgent">URGENT</span>}
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+                            <span style={{ fontSize: '1.25rem', fontWeight: 800 }}>{r.ref_number}</span>
+                            <span className={`badge badge-${r.status}`}>{r.status.replace('_', ' ')}</span>
+                            {r.priority === 'urgent' && <span className="badge badge-urgent">URGENT</span>}
+                        </div>
+                        {r.reactivated_from_id && (
+                            <button
+                                onClick={() => navigate(`/requisitions/${r.reactivated_from_id}`)}
+                                style={{ background: 'none', border: 'none', color: 'var(--primary)', padding: 0, fontSize: '0.7rem', fontWeight: 600, textAlign: 'left', cursor: 'pointer', marginTop: '-4px', marginBottom: '8px' }}
+                            >
+                                ⟳ Reactivated from {r.reactivated_from?.ref_number || 'previous version'}
+                            </button>
+                        )}
                     </div>
                     <h1 style={{ fontSize: '1.5rem', marginBottom: '0.25rem' }}>{r.title}</h1>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Created by {r.user?.name} &bull; {new Date(r.created_at).toLocaleDateString()}</p>
@@ -142,6 +178,12 @@ const RequisitionDetailPage = () => {
                             </button>
                         </>
                     )}
+                    {r.status === 'cancelled' && (
+                        <button className="btn btn-primary" onClick={() => reactivateMutation.mutate()} disabled={reactivateMutation.isPending}>
+                            <RotateCcw size={18} />
+                            REACTIVATE
+                        </button>
+                    )}
                     <button className="btn btn-outline" onClick={() => {
                         const token = useAuthStore.getState().token;
                         const baseUrl = API_BASE_URL;
@@ -156,6 +198,20 @@ const RequisitionDetailPage = () => {
                             <Plus size={18} />
                             ISSUE PO
                         </button>
+                    )}
+                    {(r.status === 'po_issued' || r.status === 'awarded') && (
+                        <>
+                            {r.status === 'po_issued' && (
+                                <button className="btn btn-primary" style={{ background: '#d97706' }} onClick={() => navigate(`/grns/new?requisition_id=${id}`)}>
+                                    <Package size={18} />
+                                    RECEIVE GOODS
+                                </button>
+                            )}
+                            <button className="btn btn-primary" onClick={() => navigate(`/payments/create?requisition_id=${id}`)}>
+                                <Plus size={18} />
+                                CREATE RFP
+                            </button>
+                        </>
                     )}
                 </div>
             </div>
@@ -195,6 +251,55 @@ const RequisitionDetailPage = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: '3fr 1fr', gap: '2rem' }}>
                 <div className="tab-content">
+                    {/* SAP Verification Banner (R-12) */}
+                    {r.status === 'for_sap_entry' && (
+                        <div className="glass-card animate-slide-in" style={{ padding: '2rem', marginBottom: '2rem', border: '1px solid var(--primary)', background: 'rgba(56, 189, 248, 0.05)' }}>
+                            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
+                                <div style={{ background: 'var(--primary)', color: 'white', padding: '12px', borderRadius: '12px' }}>
+                                    <ShoppingCart size={32} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem' }}>SAP Verification Gate</h2>
+                                    <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+                                        The Purchase Processing Officer has entered this request into SAP.
+                                        Please fetch and verify the SAP JO/PO details. Once confirmed, internal approvals will begin.
+                                    </p>
+
+                                    {!sapPreview ? (
+                                        <button className="btn btn-primary" onClick={() => fetchSapMutation.mutate()} disabled={fetchSapMutation.isPending}>
+                                            {fetchSapMutation.isPending ? 'FETCHING...' : 'FETCH SAP DETAILS (SIMULATION)'}
+                                        </button>
+                                    ) : (
+                                        <div className="animate-fade-in" style={{ background: 'rgba(255,255,255,0.02)', padding: '1.5rem', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>SAP REF</label>
+                                                    <div style={{ fontWeight: 800, color: 'var(--primary)' }}>{sapPreview.external_ref}</div>
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>SAP VENDOR</label>
+                                                    <div style={{ fontWeight: 800 }}>{sapPreview.vendor_name}</div>
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>SAP TOTAL</label>
+                                                    <div style={{ fontWeight: 800 }}>{sapPreview.currency} {sapPreview.total_amount.toLocaleString()}</div>
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                                <button className="btn btn-primary" onClick={() => verifySapMutation.mutate(sapPreview.external_ref)}>
+                                                    CONFIRM & PROCEED
+                                                </button>
+                                                <button className="btn btn-outline" onClick={() => setSapPreview(null)}>
+                                                    CANCEL
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {activeTab === 'overview' && (
                         <div className="animate-fade-in">
                             <div className="glass-card" style={{ padding: '2rem' }}>
@@ -554,6 +659,17 @@ const RequisitionDetailPage = () => {
 
                     {activeTab === 'approval-workflow' && (
                         <div className="glass-card" style={{ padding: '2rem' }}>
+                            {r.user?.supervisor && (
+                                <div style={{ marginBottom: '2rem', padding: '1rem', background: 'rgba(56, 189, 248, 0.05)', border: '1px solid var(--primary)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{ background: 'var(--primary)', color: 'white', padding: '8px', borderRadius: '8px' }}>
+                                        <Clock size={20} />
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Direct Supervisor</div>
+                                        <div style={{ fontWeight: 800 }}>{r.user.supervisor.name}</div>
+                                    </div>
+                                </div>
+                            )}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 {r.approval_steps?.map((step, idx) => (
                                     <div key={step.id} style={{ display: 'flex', gap: '1.5rem' }}>

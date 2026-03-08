@@ -15,7 +15,7 @@ class PaymentRequest extends Model
         'ref_number',
         'request_type',
         'requisition_id',
-        'purchase_order_id',
+        'po_jo_id',
         'title',
         'particulars',
         'payee_name',
@@ -29,6 +29,8 @@ class PaymentRequest extends Model
         'tax_code',
         'withholding_tax',
         'status',
+        'accounting_validated_by',
+        'accounting_validated_at',
         'apv_number',
         'cv_number',
         'check_number',
@@ -44,9 +46,15 @@ class PaymentRequest extends Model
         'due_date' => 'date',
         'available_date' => 'date',
         'release_date' => 'date',
-        'amount' => 'decimal:2',
+        'amount' => 'decimal:4',
+        'accounting_validated_at' => 'datetime',
         'version' => 'integer'
     ];
+
+    public function accountingValidator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'accounting_validated_by');
+    }
 
     public function department(): BelongsTo
     {
@@ -68,9 +76,9 @@ class PaymentRequest extends Model
         return $this->belongsTo(Requisition::class);
     }
 
-    public function purchaseOrder(): BelongsTo
+    public function poJo(): BelongsTo
     {
-        return $this->belongsTo(PurchaseOrder::class);
+        return $this->belongsTo(PurchaseOrder::class, 'po_jo_id');
     }
 
     public function lineItems(): HasMany

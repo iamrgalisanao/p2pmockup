@@ -45,6 +45,13 @@ class RequisitionWorkflowService
                 case 'submitted':
                     $this->handleSubmission($requisition);
                     break;
+                case 'for_sap_entry':
+                    // Reserved for Purchase Processing Officer to enter details in SAP
+                    break;
+                case 'sap_verified':
+                    // Once verify details (simulation)
+                    $this->handleSapVerification($requisition);
+                    break;
                 case 'on_hold':
                     $requisition->sla_paused = true;
                     $requisition->sla_paused_at = Carbon::now();
@@ -57,6 +64,7 @@ class RequisitionWorkflowService
                 case 'approved':
                 case 'awarded':
                 case 'po_issued':
+                case 'reactivated':
                     // Resume SLA if coming from hold
                     if ($oldStatus === 'on_hold') {
                         $requisition->resumeSla();
@@ -126,10 +134,24 @@ class RequisitionWorkflowService
 
     /**
      * Logic for when a PR is first submitted.
+     * Pivot: Now moves to 'for_sap_entry' instead of triggering approvals immediately.
      */
     private function handleSubmission(Requisition $requisition)
     {
-        // 1. Clear old steps (in case of re-submission from 'returned')
+        // For SAP Integration Flow (R-12), it moves to for_sap_entry
+        $requisition->status = 'for_sap_entry';
+        $requisition->save();
+
+        AuditLog::record($requisition, 'moved_to_sap_entry_gate');
+    }
+
+    /**
+     * Logic for when SAP details are verified by the Requestor.
+     * Approval chain starts AFTER SAP verification.
+     */
+    private function handleSapVerification(Requisition $requisition)
+    {
+        // 1. Clear old steps
         $requisition->approvalSteps()->delete();
 
         // 2. Generate MRF Number if applicable
@@ -141,6 +163,19 @@ class RequisitionWorkflowService
 
         // 3. Generate Approval Chain (SOP-03)
         $stepNumber = 1;
+
+        // 3a. Inject Supervisor Approval if Requester has one (Hierarchy R-11/R-12 extension)
+        $requester = $requisition->requester;
+        if ($requester && $requester->supervisor_id) {
+            ApprovalStep::create([
+                'requisition_id' => $requisition->id,
+                'step_number' => $stepNumber++,
+                'step_label' => 'Direct Supervisor Approval',
+                'role_required' => $requester->supervisor->role ?? 'dept_head',
+                'approver_id' => $requester->supervisor_id,
+                'sla_deadline' => Carbon::now()->addHours(24),
+            ]);
+        }
 
         if (in_array($requisition->request_type, ['MRF', 'JRF'])) {
             // New Requirement Workflow for MRF/JRF:
@@ -214,6 +249,9 @@ class RequisitionWorkflowService
                 ]);
             }
         }
+
+        // 3. Notify the FIRST approver immediately
+        $this->notifyNextApprover($requisition);
     }
 
     /**
@@ -264,7 +302,45 @@ class RequisitionWorkflowService
             // Logic for what happens after all approvers are done
             // Based on SOP-01: Approved -> (Evaluation/Award)
             $this->transition($requisition, 'approved');
+        } else {
+            // Sequential Notification: Notify the next person in line
+            $this->notifyNextApprover($requisition);
         }
+    }
+
+    /**
+     * Finds the next pending approval step and notifies the relevant users.
+     */
+    private function notifyNextApprover(Requisition $requisition)
+    {
+        $nextStep = $requisition->approvalSteps()
+            ->where('action', 'pending')
+            ->orderBy('step_number')
+            ->first();
+
+        if (!$nextStep) {
+            return;
+        }
+
+        // Find users with the required role
+        $approvers = \App\Models\User::where('role', $nextStep->role_required)
+            ->where('is_active', true)
+            ->where(function ($q) use ($requisition) {
+                // Respect department scoping
+                $q->where('department_id', $requisition->department_id)
+                    ->orWhere('role', 'admin') // Admins can always see/act
+                    ->orWhere('role', 'president'); // Global roles
+            })
+            ->get();
+
+        foreach ($approvers as $user) {
+            Mail::to($user->email)->send(new \App\Mail\ApproverNotification($requisition, $nextStep));
+        }
+
+        AuditLog::record($requisition, 'approver_notified', null, [
+            'step' => $nextStep->step_label,
+            'role' => $nextStep->role_required
+        ]);
     }
 
     /**
@@ -372,6 +448,64 @@ class RequisitionWorkflowService
 
             $this->transition($requisition, 'completed', ['comment' => $comment]);
             return true;
+        });
+    }
+
+    /**
+     * R-13: Reactivate a cancelled requisition.
+     * Clones data and increments series.
+     */
+    public function reactivate(Requisition $requisition)
+    {
+        return DB::transaction(function () use ($requisition) {
+            if ($requisition->status !== 'cancelled') {
+                throw new Exception("Only cancelled requisitions can be reactivated.");
+            }
+
+            // 1. Determine new ref_number series
+            $baseRef = $requisition->ref_number;
+            $versionIndex = 1;
+            if (preg_match('/-R(\d+)$/', $baseRef, $matches)) {
+                $versionIndex = intval($matches[1]) + 1;
+                $baseRef = preg_replace('/-R\d+$/', '', $baseRef);
+            }
+            $newRef = $baseRef . "-R" . $versionIndex;
+
+            // 2. Clone Requisition
+            $newRequisition = $requisition->replicate();
+            $newRequisition->id = Str::uuid()->toString();
+            $newRequisition->ref_number = $newRef;
+            $newRequisition->status = 'draft';
+            $newRequisition->reactivated_from_id = $requisition->id;
+            $newRequisition->version = 1;
+            $newRequisition->save();
+
+            // 3. Mark old as superseded
+            $requisition->update([
+                'status' => 'reactivated',
+                'superseded_by_id' => $newRequisition->id
+            ]);
+
+            // 4. Clone Line Items
+            foreach ($requisition->lineItems as $item) {
+                $newItem = $item->replicate();
+                $newItem->id = Str::uuid()->toString();
+                $newItem->requisition_id = $newRequisition->id;
+                $newItem->save();
+            }
+
+            // 5. Clone Attachments
+            foreach ($requisition->attachments as $attachment) {
+                $newAttachment = $attachment->replicate();
+                $newAttachment->id = Str::uuid()->toString();
+                $newAttachment->entity_id = $newRequisition->id;
+                $newAttachment->save();
+            }
+
+            AuditLog::record($newRequisition, 'reactivated_from', null, ['original_id' => $requisition->id]);
+            AuditLog::record($requisition, 'superseded_by', null, ['new_id' => $newRequisition->id]);
+
+            return $newRequisition;
         });
     }
 }

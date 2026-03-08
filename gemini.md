@@ -135,13 +135,31 @@
     "estimated_total": "decimal [SYSTEM-CALCULATED: sum of line_item.line_total]",
     "required_documents": ["enum: see Document Types below"],
     "checklist_satisfied": "boolean [SYSTEM-CALCULATED: all required docs attached]",
-    "status": "draft | submitted | under_review | for_quoting | quote_evaluation | for_approval | approved | rejected | on_hold | awarded | po_issued | closed | cancelled",
+    "status": "draft | submitted | for_sap_entry | sap_verified | under_review | for_quoting | quote_evaluation | for_approval | approved | rejected | on_hold | awarded | po_issued | closed | cancelled | reactivated",
     "hold_reason": "string | null",
+    "reactivated_from_id": "uuid | null",
+    "superseded_by_id": "uuid | null",
     "sla_deadline": "ISO datetime | null",
     "sla_paused": "boolean",
     "created_at": "ISO datetime",
     "updated_at": "ISO datetime",
     "version": "integer [auto-increment on every mutation]"
+  }
+}
+```
+
+#### 2.1 RFP (Request for Payment)
+```json
+{
+  "payment_request": {
+    "id": "uuid",
+    "requisition_id": "uuid",
+    "po_jo_id": "uuid",
+    "ref_number": "RFP-YYYY-#####",
+    "status": "draft | accounting_validated | under_review | approved | paid | rejected",
+    "accounting_validated_by": "uuid",
+    "accounting_validated_at": "ISO datetime",
+    "created_at": "ISO datetime"
   }
 }
 ```
@@ -255,6 +273,7 @@ notice_to_award | performance_bond | inspection_report | other
     "requisition_id": "uuid",
     "vendor_id": "uuid",
     "awarded_quote_id": "uuid",
+    "external_sap_ref": "string | null",
     "issued_by": "uuid",
     "issued_at": "ISO datetime",
     "line_items": [
@@ -323,7 +342,7 @@ notice_to_award | performance_bond | inspection_report | other
 |---|------|
 | R-01 | **No vendor portal.** Vendors do not have login access. Ever. |
 | R-02 | **No auto-forwarding.** PO/JO/NTA are never automatically sent to vendors. Manual "Mark as Sent" only. |
-| R-03 | **Role-based access is scoped.** Users only see data within their department/project scope. |
+| R-03 | **Role-based access is strictly department-scoped.** Users only see data within their department/project scope. |
 | R-04 | **One action per step.** An approval step that has been actioned cannot be re-actioned (concurrency-safe). |
 | R-05 | **Comments mandatory on rejection/return/hold.** The system blocks the action if the comment field is empty. |
 | R-06 | **Holds pause SLA timers.** `sla_deadline` recalculation begins on resume, not on hold. |
@@ -331,6 +350,10 @@ notice_to_award | performance_bond | inspection_report | other
 | R-08 | **Required document checklist is configurable per requisition type.** Enforced at submission gate. |
 | R-09 | **≥3 vendor quotes required.** System blocks cost comparison step if quote count < 3 (unless exception is approved). |
 | R-10 | **Award defaults to lowest responsive bid.** Override = authorized role + justification + audited. |
+| R-11 | **Actionable Email Notifications.** Approver emails must include detail tables and "Approve/Deny" signed-URL buttons for one-click action. |
+| R-12 | **SAP Verification Gate.** Requestors must verify JO/PO details (fetched/simulated from SAP) before the approval workflow proceeds. |
+| R-13 | **Reactivation with History.** Cancelled MRF/JRF can be reactivated. This clones all data to a new series ID and marks the old record as historical. |
+| R-14 | **Two-Stage Workflow.** Requisition Workflow followed by RFP (Request for Payment) Workflow after JO/JO validation. |
 
 ---
 
@@ -343,6 +366,7 @@ e:\2026\P2Pmockup\
 ├── task_plan.md           # Phases, goals, checklists
 ├── findings.md            # Research, discoveries, constraints
 ├── progress.md            # Done/errors/test results
+├── developer_notes.md     # 🟢 Living Developer Handover (Architecture & Implementation Logs)
 │
 ├── architecture/          # Layer 1: SOPs (Markdown spec docs)
 │   ├── 01_requisition_workflow.md
@@ -377,4 +401,5 @@ e:\2026\P2Pmockup\
 |------|--------|--------|
 | 2026-02-21 | System Pilot | Initial constitution created (pre-discovery) |
 | 2026-02-21 | System Pilot | **SCHEMA LOCKED** — Full P2P schema, behavioral rules, and architectural invariants committed post-Discovery Q&A |
-| 2026-02-21 | System Pilot | **STACK LOCKED** — ReactJS (Vite) + PHP Laravel 11 + MySQL 8.0. Replaces assumed FastAPI/PostgreSQL/Next.js. All affected SOPs and tools updated. |
+| 2026-02-21 | System Pilot | **STACK LOCKED** — ReactJS (Vite) + PHP Laravel 11 + MySQL 8.0. All affected SOPs and tools updated. |
+| 2026-03-08 | System Pilot | **PROCESS REVISION** — Updated Rules R-11 to R-14 based on client's new process flow (SAP Integration, RFP Workflow, Email Actions, Reactivation logic). |

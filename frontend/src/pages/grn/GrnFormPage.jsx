@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import api from '../../services/api';
 import { grnService } from '../../services/grnService';
 import toast from 'react-hot-toast';
@@ -18,6 +18,10 @@ import {
 const GrnFormPage = () => {
     const navigate = useNavigate();
     const queryClient = useQueryClient();
+    const location = useLocation();
+    const searchParams = new URLSearchParams(location.search);
+    const requisitionId = searchParams.get('requisition_id');
+
     const [selectedPo, setSelectedPo] = useState(null);
     const [items, setItems] = useState([]);
     const [form, setForm] = useState({
@@ -32,6 +36,15 @@ const GrnFormPage = () => {
         // We assume POs with status 'po_issued' are ready for GRN
         queryFn: () => api.get('/requisitions?status=po_issued').then(res => res.data),
     });
+
+    useEffect(() => {
+        if (requisitionId && pos?.data) {
+            const pr = pos.data.find(p => p.id === requisitionId);
+            if (pr) {
+                handleSelectPo(pr.id);
+            }
+        }
+    }, [requisitionId, pos]);
 
     const handleSelectPo = async (poId) => {
         try {

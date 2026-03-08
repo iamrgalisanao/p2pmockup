@@ -486,6 +486,17 @@ const RequisitionFormPage = () => {
                                                         required
                                                     />
                                                 </div>
+
+                                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                                    <label>Particulars / Scope of Work</label>
+                                                    <textarea
+                                                        rows={3}
+                                                        placeholder="Enter detailed specifications or scope..."
+                                                        value={form.particulars}
+                                                        onChange={(e) => setForm({ ...form, particulars: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
+                                                    />
+                                                </div>
                                             </>
                                         ) : (
                                             <>
@@ -506,6 +517,17 @@ const RequisitionFormPage = () => {
                                                         value={form.date_needed}
                                                         onChange={(e) => setForm({ ...form, date_needed: e.target.value })}
                                                         required
+                                                    />
+                                                </div>
+
+                                                <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                                                    <label>Particulars / Scope of Work</label>
+                                                    <textarea
+                                                        rows={3}
+                                                        placeholder="Enter detailed specifications or scope..."
+                                                        value={form.particulars}
+                                                        onChange={(e) => setForm({ ...form, particulars: e.target.value })}
+                                                        style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}
                                                     />
                                                 </div>
                                             </>

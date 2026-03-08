@@ -7,18 +7,60 @@ import {
     Search,
     ChevronLeft,
     ChevronRight,
-    Package
+    Package,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    X,
+    Filter
 } from 'lucide-react';
+import { useDebounce } from '../../hooks/useDebounce';
+import AdvancedFilterDrawer from '../../components/AdvancedFilterDrawer';
+import EmptyState from '../../components/EmptyState';
 
 const GrnListPage = () => {
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState('');
+    const [sort, setSort] = useState({ by: 'created_at', dir: 'desc' });
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    const { data, isLoading } = useQuery({
-        queryKey: ['grns', page, search],
-        queryFn: () => grnService.getAll({ page, search }).then(res => res.data),
+    const [advancedFilters, setAdvancedFilters] = useState({
+        date_from: '',
+        date_to: ''
     });
+
+    const debouncedSearch = useDebounce(search, 500);
+
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['grns', page, debouncedSearch, sort, advancedFilters],
+        queryFn: () => grnService.getAll({
+            page,
+            search: debouncedSearch,
+            sort_by: sort.by,
+            sort_dir: sort.dir,
+            ...advancedFilters
+        }).then(res => res.data),
+    });
+
+    const handleSort = (field) => {
+        setSort(prev => ({
+            by: field,
+            dir: prev.by === field && prev.dir === 'desc' ? 'asc' : 'desc'
+        }));
+    };
+
+    const filterConfig = [
+        { key: 'date_from', label: 'Received From', type: 'date' },
+        { key: 'date_to', label: 'Received To', type: 'date' },
+    ];
+
+    const activeFilterCount = Object.values(advancedFilters).filter(v => v !== '').length;
+
+    const SortIcon = ({ field }) => {
+        if (sort.by !== field) return <ArrowUpDown size={14} style={{ opacity: 0.3 }} />;
+        return sort.dir === 'asc' ? <ArrowUp size={14} className="text-primary" /> : <ArrowDown size={14} className="text-primary" />;
+    };
 
     return (
         <div className="view animate-fade-in">
@@ -41,35 +83,66 @@ const GrnListPage = () => {
                     <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                     <input
                         type="text"
-                        placeholder="Search by GRN or PO reference..."
+                        placeholder="Search by GRN, PO reference, or vendor..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         style={{ paddingLeft: '40px' }}
                     />
+                    {search && (
+                        <button
+                            onClick={() => setSearch('')}
+                            style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
                 </div>
+
+                <button
+                    className={`btn ${activeFilterCount > 0 ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => setIsFilterOpen(true)}
+                >
+                    <Filter size={18} />
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && (
+                        <span className="filter-badge">{activeFilterCount}</span>
+                    )}
+                </button>
             </div>
 
             <div className="table-container">
-                <table>
+                <table style={{ borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                     <thead>
-                        <tr>
-                            <th>GRN Ref</th>
-                            <th>PO Ref</th>
-                            <th>Vendor</th>
-                            <th>Received Date</th>
-                            <th>Received By</th>
-                            <th>Status</th>
+                        <tr style={{ background: 'none' }}>
+                            <th onClick={() => handleSort('ref_number')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>GRN REF <SortIcon field="ref_number" /></div>
+                            </th>
+                            <th>PO REF</th>
+                            <th>VENDOR</th>
+                            <th onClick={() => handleSort('received_date')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>RECEIVED DATE <SortIcon field="received_date" /></div>
+                            </th>
+                            <th>RECEIVED BY</th>
+                            <th>STATUS</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
                             [...Array(5)].map((_, i) => (
-                                <tr key={i}><td colSpan="7" style={{ padding: '1.5rem', textAlign: 'center' }}>Loading...</td></tr>
+                                <tr key={i} className="skeleton-row">
+                                    <td colSpan="7"><div className="skeleton" style={{ height: '50px', borderRadius: '4px' }}></div></td>
+                                </tr>
                             ))
+                        ) : data?.data?.length === 0 ? (
+                            <tr>
+                                <td colSpan="7" style={{ padding: 0 }}>
+                                    <EmptyState icon={Package} title="No receipts found" />
+                                </td>
+                            </tr>
                         ) : (
                             data?.data?.map((g) => (
-                                <tr key={g.id}>
+                                <tr key={g.id} className="row-hover">
                                     <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{g.ref_number}</td>
                                     <td>{g.purchase_order?.ref_number}</td>
                                     <td>{g.purchase_order?.vendor?.name}</td>
@@ -80,19 +153,13 @@ const GrnListPage = () => {
                                             {g.status}
                                         </span>
                                     </td>
-                                    <td>
-                                        <button className="btn btn-outline" style={{ padding: '6px' }} onClick={() => navigate(`/grns/${g.id}`)}>
-                                            View Details
+                                    <td style={{ textAlign: 'right' }}>
+                                        <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => navigate(`/grns/${g.id}`)}>
+                                            VIEW
                                         </button>
                                     </td>
                                 </tr>
                             ))
-                        )}
-                        {!isLoading && data?.data?.length === 0 && (
-                            <tr><td colSpan="7" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                                <Package size={48} style={{ marginBottom: '1rem', opacity: 0.2 }} />
-                                <p>No goods received notes found.</p>
-                            </td></tr>
                         )}
                     </tbody>
                 </table>
@@ -119,6 +186,15 @@ const GrnListPage = () => {
                     </button>
                 </div>
             </div>
+
+            <AdvancedFilterDrawer
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                onApply={refetch}
+                filters={advancedFilters}
+                setFilters={setAdvancedFilters}
+                config={filterConfig}
+            />
         </div>
     );
 };

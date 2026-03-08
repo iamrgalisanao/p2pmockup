@@ -184,44 +184,85 @@ class RequisitionController extends Controller
         return response()->json($requisition->load('lineItems'));
     }
 
-    public function submit(Requisition $requisition)
+    public function submit(Requisition $requisition, \App\Services\RequisitionWorkflowService $workflow)
     {
         $this->authorizeScope($requisition);
 
-        if ($requisition->status !== 'draft' && $requisition->status !== 'returned') {
-            return response()->json(['message' => 'Requisition must be in draft or returned status to submit.'], 422);
+        try {
+            $workflow->transition($requisition, 'submitted');
+            return response()->json(['message' => 'Requisition submitted for processing.', 'requisition' => $requisition]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+    }
+
+    /**
+     * Simulation: Fetch JO/PO details from SAP (R-12)
+     */
+    public function fetchSapDetails(Requisition $requisition, \App\Services\SapSimulationService $sap)
+    {
+        $this->authorizeScope($requisition);
+
+        if ($requisition->status !== 'for_sap_entry') {
+            return response()->json(['message' => 'Requisition is not yet ready for SAP verification.'], 422);
         }
 
-        if ($requisition->lineItems()->count() === 0) {
-            return response()->json(['message' => 'Requisition must have at least one line item.'], 422);
+        $details = $sap->fetchExternalDetails($requisition);
+
+        return response()->json($details);
+    }
+
+    /**
+     * Confirm/Verify details of JO/PO from SAP
+     */
+    public function verifySapDetails(Request $request, Requisition $requisition, \App\Services\RequisitionWorkflowService $workflow)
+    {
+        $this->authorizeScope($requisition);
+
+        $request->validate([
+            'external_sap_ref' => 'required|string',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request, $requisition, $workflow) {
+                $requisition->update([
+                    'external_sap_ref' => $request->external_sap_ref,
+                    'sap_verified_at' => now(),
+                    'sap_verified_by' => auth()->id(),
+                ]);
+
+                $workflow->transition($requisition, 'sap_verified');
+            });
+
+            return response()->json(['message' => 'SAP details verified. Approval workflow started.', 'requisition' => $requisition]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
+    }
 
-        // Checklist enforcement (logic defined in SOP-02)
-        // For Phase 1, we assume specific docs are required
-        $requiredDocs = ['purchase_request_form']; // Example
-        $requisition->updateChecklistStatus($requiredDocs);
+    /**
+     * R-13: Reactivate a cancelled requisition.
+     */
+    public function reactivate(Requisition $requisition, \App\Services\RequisitionWorkflowService $workflow)
+    {
+        $this->authorizeScope($requisition);
 
-        // TEMPORARY: Allow submission for mockup even if docs not physically attached
-        /*
-        if (!$requisition->checklist_satisfied) {
-            return response()->json(['message' => 'Required documents are missing.'], 422);
-        }
-        */
-
-        // Check Budget Availability (Hard Stop)
+        // Check Budget Availability (Hard Stop) from remote logic
         $budgetService = new \App\Services\BudgetService();
         if (!$budgetService->isBudgetAvailable($requisition->department_id, $requisition->project_id, (float) $requisition->estimated_total)) {
             return response()->json(['message' => 'Insufficient budget for this requisition.'], 422);
         }
 
         try {
-            $workflow = new \App\Services\RequisitionWorkflowService();
-            $workflow->transition($requisition, 'submitted');
+            $newRequisition = $workflow->reactivate($requisition);
+            return response()->json([
+                'message' => 'Requisition reactivated successfully.',
+                'new_id' => $newRequisition->id,
+                'new_ref_number' => $newRequisition->ref_number
+            ]);
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
-
-        return response()->json(['message' => 'Requisition submitted for approval.', 'requisition' => $requisition->load('approvalSteps')]);
     }
 
     public function nextRefNumber(Request $request)

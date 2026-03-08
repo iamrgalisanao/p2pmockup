@@ -33,6 +33,11 @@ class Requisition extends Model
         'sla_deadline',
         'sla_paused',
         'sla_paused_at',
+        'external_sap_ref',
+        'sap_verified_at',
+        'sap_verified_by',
+        'reactivated_from_id',
+        'superseded_by_id',
         'version',
     ];
 
@@ -44,6 +49,7 @@ class Requisition extends Model
         'sla_deadline' => 'datetime',
         'sla_paused' => 'boolean',
         'sla_paused_at' => 'datetime',
+        'sap_verified_at' => 'datetime',
     ];
 
     protected static function boot(): void
@@ -53,6 +59,8 @@ class Requisition extends Model
             $m->id ??= Str::uuid()->toString();
             $m->version ??= 1;
         });
+
+        static::addGlobalScope(new \App\Models\Scopes\DepartmentScope);
     }
 
     // ── Relationships ──────────────────────────────────────────────────────

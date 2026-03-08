@@ -95,26 +95,50 @@
 - ✅ **UI/UX Revisions**: Styled the MainLayout sidebar collapse button to align flush with the edge using PITX branding (tab style). Centered `.main-content` across desktop and tablet views with a `1440px` max-width.
 - ✅ **Bugfixes & Maintenance**: Fixed React Hot Reloading crash (`navItems is not defined`) using `useMemo`. Cleared duplicate key index errors on database migrations and ran fresh DB seeds. Cleaned up unused Lucide-React imports in `DashboardPage.jsx` and resolved React hooks exhaustive-deps warnings.
 
-**Next Actions Required:**
-1. **Refine Requisition Workflows**: Validate that the entire end-to-end form and tracking logic executes seamlessly.
-2. **Payment Requests Integration**: Connect the payment interface logic to backend validation points.
-3. **Document Tracking**: Integrate PDF viewer and mark-as-sent status.
+1. **Actionable Email Notifications**: Implement signed-URL based "Approve/Deny" buttons for one-click actions (R-11).
+2. **Payment Requests (RFP) Workflow**: Build the second-stage approval logic for accounting and finance (R-14).
+3. **Live SAP Integration**: Replace simulation with production OData/BAPI connections.
 
+---
+
+---
+
+### 2026-03-08 — Session Complete — RFP Workflow & Actionable Emails (R-14, R-11)
+**Status:** 🟢 RFP Workflow LIVE | Actionable Email Engine ENHANCED
+**Action:** Implemented the full end-to-end Request for Payment (RFP) lifecycle and upgraded the actionable email system to handle both Requisitions and RFPs.
+
+**Work Completed:**
+- ✅ **RFP Lifecycle (R-14)**: Built `PaymentRequest` model, migrations, and `PaymentRequestWorkflowService` with 2-stage approval (Accounting Gate + Sequential Chain).
+- ✅ **Frontend RFP UI**: 
+    - Implemented `PaymentRequestListPage.jsx` and `PaymentRequestDetailPage.jsx`.
+    - Refactored `PaymentRequestFormPage.jsx` to support auto-mapping from Requisition/PO line items.
+    - Integrated "CREATE RFP" entry point in Requisition Details.
+- ✅ **Actionable Emails (R-11)**: 
+    - Refactored `ApprovalEmailController.php` to handle polymorphic "Approve/Deny" actions via signed URLs.
+    - Created `PaymentRequestApproverNotification` and `PaymentRequestStatusNotification` mailables.
+    - Enabled sequential email notifications for RFP approvers.
+- ✅ **Concurrency & Safety**: Implemented version-based mutation guards in the RFP workflow.
+
+**Remaining/Next Steps:**
+1. **User Training / Manual Verification**: Request user review of the end-to-end flow.
+2. **Production SMTP Finalization**: Verify cloud SMTP configuration for high-volume notifications.
 
 ---
 
 ## 🧪 Test Results
 | Timestamp | Tool/Script | Input | Result | Status |
 |-----------|------------|-------|--------|--------|
-| 2026-02-23 | Artisan Migrate | migrate:status | All 18 migrations applied successfully. | ✅ PASS |
-| 2026-02-23 | Artisan Command | p2p:check-sla | Command logic verified, records breaches in audit log. | ✅ PASS |
+| 2026-03-08 | Manual Test | Create RFP from Requisition | Data auto-mapped, draft saved correctly. | ✅ PASS |
+| 2026-03-08 | Manual Test | Accounting Validate | Transitioned to under_review, chain generated. | ✅ PASS |
+| 2026-03-08 | Manual Test | Signed URL Approval | Action processed without login via ApprovalEmailController. | ✅ PASS |
 
 ---
 
 ## 🐛 Errors & Resolutions
 | Timestamp | Error | Root Cause | Fix Applied | SOP Updated? |
 |-----------|-------|-----------|------------|-------------|
-| — | — | — | — | — |
+| 2026-03-08 | Type Mismatch in Mailable | StatusChangeNotification expected Requisition only | Created specific PaymentRequestStatusNotification. | ✅ YES |
+
 
 ---
 
@@ -122,3 +146,11 @@
 | Timestamp | Failure | Resolution | Architecture Updated |
 |-----------|---------|-----------|---------------------|
 | — | — | — | — |
+- **Hierarchical Workflow**: Integrated supervisor-based approvals and verified injection logic in `RequisitionWorkflowService`.
+- **GRN Integration**: Implemented goods receiving actions with quantity validation and automatic PO/Requisition closure logic.
+- **Reactivation & Polish**: Added "Reactivated from" links and surfaced particulars in PDFs.
+- **Search & UI Optimization**: 
+    - Standardized debounced global search across Requisitions, GRNs, and RFPs.
+    - Implemented `AdvancedFilterDrawer` (Date Ranges, Status, Priority).
+    - Added sortable table headers and premium `EmptyState` UI for zero-result scenarios.
+    - Upgraded backend controllers to support multi-field search and column sorting.

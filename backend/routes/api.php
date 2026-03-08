@@ -23,6 +23,12 @@ use App\Http\Controllers\Api\GrnController;
 // ──────────────────────────────────────────────────
 Route::post('/auth/login', [AuthController::class, 'login']);
 
+// Actionable Email Route (R-11)
+Route::get('/approvals/email-action/{step}', [\App\Http\Controllers\Api\ApprovalEmailController::class, 'handleAction'])
+    ->name('approval.email.action')
+    ->middleware('signed');
+
+
 // ──────────────────────────────────────────────────
 // Protected Routes (Laravel Sanctum)
 // ──────────────────────────────────────────────────
@@ -56,6 +62,13 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\EnsureUserIsActive'])->g
         Route::post('/submit', [RequisitionController::class, 'submit']);
         Route::post('/cancel', [RequisitionController::class, 'cancel']);
         Route::get('/audit', [AuditLogController::class, 'forRequisition']);
+        Route::post('/reactivate', [RequisitionController::class, 'reactivate']);
+
+        // SAP Simulation Gate (R-12)
+        Route::prefix('sap')->group(function () {
+            Route::get('/fetch', [RequisitionController::class, 'fetchSapDetails']);
+            Route::post('/verify', [RequisitionController::class, 'verifySapDetails']);
+        });
 
         // Line Items
         Route::apiResource('line-items', RequisitionLineItemController::class)
@@ -90,6 +103,7 @@ Route::middleware(['auth:sanctum', 'App\Http\Middleware\EnsureUserIsActive'])->g
     Route::apiResource('payment-requests', PaymentRequestController::class);
     Route::prefix('payment-requests/{payment_request}')->group(function () {
         Route::post('/submit', [PaymentRequestController::class, 'submit']);
+        Route::post('/accounting-validate', [PaymentRequestController::class, 'accountingValidate']);
         Route::post('/approvals/{step}/act', [PaymentRequestController::class, 'act']);
     });
 

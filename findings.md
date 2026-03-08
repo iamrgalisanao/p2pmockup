@@ -81,10 +81,8 @@
 
 ## 💡 Discoveries
 
-### 2026-02-21
-- The system name "P2Pmockup" confirmed: **Procure-to-Pay** — the full lifecycle from requisition origination to payment-ready PO/JO.
-- The "≥3 vendor quotes" rule is a common government procurement compliance requirement (Transparency/COA rules in many jurisdictions).
-- "Lowest responsive bid" = lowest price among quotes that are BOTH complete (all BOQ items priced) AND compliant (meets specs). Not just lowest price overall.
-- The "Mark as Sent" pattern (instead of auto-send) is a deliberate compliance safeguard — ensures human review before vendor communication.
-- All money fields stored as `DECIMAL(15,4)` in MySQL — never FLOAT (floating point rounding is unacceptable in financial systems).
-- **Stack locked 2026-02-21:** ReactJS (Vite) + PHP Laravel 11 + MySQL 8.0. This replaces the initial Python/PostgreSQL/Next.js assumption.
+### 2026-03-08
+- **ERP-First Entry (R-12)**: The new client workflow places SAP entry *ahead* of internal P2P approvals. This makes the P2P system a "Workflow Wrapper" around SAP records, ensuring that only verified ERP data enters the signature chain.
+- **Audit-Safe Reactivation (R-13)**: The decision to clone requisitions upon reactivation (rather than resetting status) ensures that the "cancelled" state is never overwritten. Each PR lifecycle is unique, and revisions are linked via `reactivated_from_id`.
+- **Systematic Scoping (R-03)**: Using global Eloquent scopes for row-level security (RLS) is superior to manual controller filtering. It protects against "ID enumeration" attacks and ensures developers can't accidentally leak data between departments.
+- **SPA Deployment (Apache)**: When deploying React SPAs using Apache's Alias directive, absolute API paths and a custom `.htaccess` RewriteBase are necessary to prevent 404s on browser reloads and API proxying issues.

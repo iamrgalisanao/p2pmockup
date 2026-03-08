@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { requisitionService } from '../../services/requisitionService';
-import { reportService } from '../../services/reportService';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
@@ -9,26 +8,89 @@ import {
     Search,
     ChevronLeft,
     ChevronRight,
-    Download
+    Download,
+    ArrowUpDown,
+    ArrowUp,
+    ArrowDown,
+    X
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { API_BASE_URL } from '../../services/api';
+import { useDebounce } from '../../hooks/useDebounce';
+import AdvancedFilterDrawer from '../../components/AdvancedFilterDrawer';
+import EmptyState from '../../components/EmptyState';
 
 const RequisitionListPage = () => {
     const navigate = useNavigate();
     const [page, setPage] = useState(1);
-    const [status, setStatus] = useState('');
     const [search, setSearch] = useState('');
+    const [sort, setSort] = useState({ by: 'updated_at', dir: 'desc' });
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    const { data, isLoading } = useQuery({
-        queryKey: ['requisitions', page, status, search],
-        queryFn: () => requisitionService.getAll({ page, status, search }).then(res => res.data),
+    const [advancedFilters, setAdvancedFilters] = useState({
+        status: '',
+        priority: '',
+        date_from: '',
+        date_to: ''
     });
+
+    const debouncedSearch = useDebounce(search, 500);
+
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['requisitions', page, debouncedSearch, sort, advancedFilters],
+        queryFn: () => requisitionService.getAll({
+            page,
+            search: debouncedSearch,
+            sort_by: sort.by,
+            sort_dir: sort.dir,
+            ...advancedFilters
+        }).then(res => res.data),
+    });
+
+    const handleSort = (field) => {
+        setSort(prev => ({
+            by: field,
+            dir: prev.by === field && prev.dir === 'desc' ? 'asc' : 'desc'
+        }));
+    };
 
     const handleExport = () => {
         const token = useAuthStore.getState().token;
         const finalUrl = `${API_BASE_URL}/reports/export?token=${token}`;
         window.open(finalUrl, '_blank');
+    };
+
+    const filterConfig = [
+        {
+            key: 'status',
+            label: 'Status',
+            type: 'select',
+            options: [
+                { value: 'draft', label: 'Draft' },
+                { value: 'submitted', label: 'For Approval' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'po_issued', label: 'PO Issued' },
+                { value: 'rejected', label: 'Rejected' },
+            ]
+        },
+        {
+            key: 'priority',
+            label: 'Priority',
+            type: 'select',
+            options: [
+                { value: 'normal', label: 'Normal' },
+                { value: 'urgent', label: 'Urgent' }
+            ]
+        },
+        { key: 'date_from', label: 'Date From', type: 'date' },
+        { key: 'date_to', label: 'Date To', type: 'date' },
+    ];
+
+    const activeFilterCount = Object.values(advancedFilters).filter(v => v !== '').length;
+
+    const SortIcon = ({ field }) => {
+        if (sort.by !== field) return <ArrowUpDown size={14} style={{ color: 'var(--text-muted)', opacity: 0.3 }} />;
+        return sort.dir === 'asc' ? <ArrowUp size={14} className="text-primary" /> : <ArrowDown size={14} className="text-primary" />;
     };
 
     return (
@@ -56,60 +118,100 @@ const RequisitionListPage = () => {
                     <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                     <input
                         type="text"
-                        placeholder="Search by ref or title..."
+                        placeholder="Search ref, title, requester, or vendor..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         style={{ paddingLeft: '40px' }}
                     />
+                    {search && (
+                        <button
+                            onClick={() => setSearch('')}
+                            style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                        >
+                            <X size={16} />
+                        </button>
+                    )}
                 </div>
 
-                <select
-                    style={{ width: '200px' }}
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value)}
+                <button
+                    className={`btn ${activeFilterCount > 0 ? 'btn-primary' : 'btn-outline'}`}
+                    onClick={() => setIsFilterOpen(true)}
+                    style={{ position: 'relative' }}
                 >
-                    <option value="">All Statuses</option>
-                    <option value="draft">Draft (Maker)</option>
-                    <option value="submitted">For Approval (DH)</option>
-                    <option value="for_transmittal">For Transmittal</option>
-                    <option value="for_review">For Review</option>
-                    <option value="for_endorsement">For Endorsement</option>
-                    <option value="approved">Approved</option>
-                    <option value="po_issued">PO Issued</option>
-                    <option value="rejected">Rejected</option>
-                    <option value="returned">Returned</option>
-                </select>
-
-                <button className="btn btn-outline">
                     <Filter size={18} />
-                    <span>More Filters</span>
+                    <span>Filters</span>
+                    {activeFilterCount > 0 && (
+                        <span style={{
+                            position: 'absolute',
+                            top: '-8px',
+                            right: '-8px',
+                            background: 'var(--accent)',
+                            color: 'white',
+                            borderRadius: '50%',
+                            width: '20px',
+                            height: '20px',
+                            fontSize: '11px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 800,
+                            border: '2px solid var(--bg-card)'
+                        }}>
+                            {activeFilterCount}
+                        </span>
+                    )}
                 </button>
             </div>
 
             <div className="table-container">
-                <table>
+                <table style={{ borderCollapse: 'separate', borderSpacing: '0 8px' }}>
                     <thead>
-                        <tr>
-                            <th>Ref Number</th>
-                            <th>Requisition Title</th>
-                            <th>Department</th>
-                            <th>Status</th>
-                            <th>Priority</th>
-                            <th>Est. Total</th>
-                            <th>Date Created</th>
+                        <tr style={{ background: 'none' }}>
+                            <th onClick={() => handleSort('ref_number')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>REF NUMBER <SortIcon field="ref_number" /></div>
+                            </th>
+                            <th onClick={() => handleSort('title')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>TITLE <SortIcon field="title" /></div>
+                            </th>
+                            <th>DEPARTMENT</th>
+                            <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>STATUS <SortIcon field="status" /></div>
+                            </th>
+                            <th onClick={() => handleSort('priority')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>PRIORITY <SortIcon field="priority" /></div>
+                            </th>
+                            <th onClick={() => handleSort('estimated_total')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>TOTAL <SortIcon field="estimated_total" /></div>
+                            </th>
+                            <th onClick={() => handleSort('created_at')} style={{ cursor: 'pointer' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>DATE <SortIcon field="created_at" /></div>
+                            </th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         {isLoading ? (
                             [...Array(5)].map((_, i) => (
-                                <tr key={i}><td colSpan="8" style={{ padding: '1.5rem', textAlign: 'center' }}>Loading...</td></tr>
+                                <tr key={i} className="skeleton-row">
+                                    <td colSpan="8"><div className="skeleton" style={{ height: '50px', borderRadius: ' var(--radius-sharp)' }}></div></td>
+                                </tr>
                             ))
+                        ) : data?.data?.length === 0 ? (
+                            <tr>
+                                <td colSpan="8" style={{ padding: 0 }}>
+                                    <EmptyState icon={Search} title="No requisitions matching your criteria" />
+                                </td>
+                            </tr>
                         ) : (
                             data?.data?.map((r) => (
-                                <tr key={r.id}>
+                                <tr key={r.id} className="row-hover">
                                     <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{r.ref_number}</td>
-                                    <td style={{ fontWeight: 500 }}>{r.title}</td>
+                                    <td style={{ fontWeight: 500 }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                            <span>{r.title}</span>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>By {r.requester?.name}</span>
+                                        </div>
+                                    </td>
                                     <td>{r.department?.name}</td>
                                     <td>
                                         <span className={`badge badge-${r.status}`} style={{ textTransform: 'uppercase', fontSize: '0.65rem' }}>
@@ -125,9 +227,9 @@ const RequisitionListPage = () => {
                                         PHP {parseFloat(r.estimated_total).toLocaleString()}
                                     </td>
                                     <td>{new Date(r.created_at).toLocaleDateString()}</td>
-                                    <td>
-                                        <button className="btn btn-outline" style={{ padding: '6px' }} onClick={() => navigate(`/requisitions/${r.id}`)}>
-                                            View Details
+                                    <td style={{ textAlign: 'right' }}>
+                                        <button className="btn btn-outline" style={{ padding: '6px 12px', fontSize: '0.75rem' }} onClick={() => navigate(`/requisitions/${r.id}`)}>
+                                            VIEW
                                         </button>
                                     </td>
                                 </tr>
@@ -158,6 +260,15 @@ const RequisitionListPage = () => {
                     </button>
                 </div>
             </div>
+
+            <AdvancedFilterDrawer
+                isOpen={isFilterOpen}
+                onClose={() => setIsFilterOpen(false)}
+                onApply={refetch}
+                filters={advancedFilters}
+                setFilters={setAdvancedFilters}
+                config={filterConfig}
+            />
         </div>
     );
 };

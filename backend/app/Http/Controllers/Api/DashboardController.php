@@ -51,20 +51,44 @@ class DashboardController extends Controller
 
         // Filters
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            $statuses = is_array($request->status) ? $request->status : [$request->status];
+            $query->whereIn('status', $statuses);
         }
         if ($request->filled('priority')) {
             $query->where('priority', $request->priority);
         }
-        if ($request->filled('search')) {
-            $query->where(
-                fn($q) =>
-                $q->where('ref_number', 'like', "%{$request->search}%")
-                    ->orWhere('title', 'like', "%{$request->search}%")
-            );
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        return response()->json($query->paginate(15));
+        // Global Search
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('ref_number', 'like', "%$s%")
+                    ->orWhere('title', 'like', "%$s%")
+                    ->orWhere('particulars', 'like', "%$s%")
+                    ->orWhereHas('requester', fn($rq) => $rq->where('name', 'like', "%$s%"))
+                    ->orWhereHas('quotes', function ($qq) use ($s) {
+                        $qq->where('is_awarded', true)
+                            ->whereHas('vendor', fn($v) => $v->where('name', 'like', "%$s%"));
+                    });
+            });
+        }
+
+        // Sorting
+        $sortBy = $request->input('sort_by', 'updated_at');
+        $sortDir = $request->input('sort_dir', 'desc');
+        $allowedSorts = ['updated_at', 'created_at', 'ref_number', 'title', 'estimated_total', 'status', 'priority'];
+
+        if (in_array($sortBy, $allowedSorts)) {
+            $query->reorder($sortBy, $sortDir);
+        }
+
+        return response()->json($query->paginate($request->input('per_page', 15)));
     }
 
     /**
