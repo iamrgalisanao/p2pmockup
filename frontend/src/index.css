@@ -243,8 +243,9 @@ h6 {
 
 /* Add a wrapper for navigation if scrolling is needed */
 .sidebar nav {
-  overflow-y: auto;
-  overflow-x: hidden;
+  flex: 1;
+  overflow: visible;
+  /* Prevent clipping of tooltips */
 }
 
 .sidebar.collapsed {
@@ -253,9 +254,60 @@ h6 {
 }
 
 .sidebar.collapsed .sidebar-header span,
-.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .nav-link span:not(.sidebar-tooltip),
 .sidebar.collapsed .user-profile>div:last-child {
   display: none;
+}
+
+/* Sidebar Tooltip - Global Message Box Style */
+.sidebar-collapse-btn,
+.sidebar .nav-link,
+.user-profile,
+.btn-icon-logout {
+  position: relative;
+}
+
+.sidebar-tooltip {
+  position: absolute !important;
+  left: calc(100% + 12px) !important;
+  top: 50% !important;
+  transform: translateY(-50%) translateX(-8px) !important;
+  background: #EB342E !important;
+  /* PITX Primary Red */
+  color: #FFFFFF !important;
+  padding: 8px 14px !important;
+  border-radius: 4px !important;
+  font-size: 0.75rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  z-index: 2000 !important;
+  box-shadow: 0 4px 20px rgba(235, 52, 46, 0.4) !important;
+  visibility: hidden !important;
+}
+
+.sidebar-tooltip::before {
+  content: '' !important;
+  position: absolute !important;
+  right: 100% !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  border: 5px solid transparent !important;
+  border-right-color: #EB342E !important;
+}
+
+/* Trigger visibility on parent hover */
+.sidebar-collapse-btn:hover .sidebar-tooltip,
+.sidebar .nav-link:hover .sidebar-tooltip,
+.user-profile:hover .sidebar-tooltip,
+.btn-icon-logout:hover .sidebar-tooltip {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(-50%) translateX(0) !important;
 }
 
 .sidebar.collapsed .nav-link {

@@ -106,12 +106,12 @@ const MainLayout = () => {
                     onClick={() => setIsCollapsed(!isCollapsed)}
                     style={{
                         position: 'absolute',
-                        right: '0',
-                        top: '98px',
+                        right: '0px',
+                        top: '99px',
                         transform: 'translateY(-50%)',
                         width: '32px',
-                        height: '38px',
-                        borderRadius: '4px 0 0 4px',
+                        height: '32px',
+                        borderRadius: '2px 0px 0px 2px',
                         background: 'white',
                         color: 'var(--text-muted)',
                         border: '1px solid var(--border)',
@@ -133,6 +133,7 @@ const MainLayout = () => {
                     }}
                 >
                     {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                    {isCollapsed && <span className="sidebar-tooltip">Expand Sidebar</span>}
                 </button>
 
                 <nav style={{ flex: 1 }}>
@@ -143,11 +144,11 @@ const MainLayout = () => {
                                 key={item.path}
                                 to={item.path}
                                 className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-                                title={isCollapsed ? item.name : ''}
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 <item.icon size={20} style={{ minWidth: 20 }} />
                                 {!isCollapsed && <span>{item.name}</span>}
+                                {isCollapsed && <span className="sidebar-tooltip">{item.name}</span>}
                                 {item.badge > 0 && (
                                     <span
                                         className="badge-pulse"
@@ -184,12 +185,11 @@ const MainLayout = () => {
                     gap: isCollapsed ? '1rem' : '0.5rem'
                 }}>
                     <div className="user-profile"
-                        title={isCollapsed ? `${user?.name} (${user?.role})` : ''}
                         style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.75rem',
-                            overflow: 'hidden',
+                            overflow: isCollapsed ? 'visible' : 'hidden',
                             flex: 1
                         }}>
                         <div style={{
@@ -207,11 +207,11 @@ const MainLayout = () => {
                                 <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>{user?.role?.replace('_', ' ')}</div>
                             </div>
                         )}
+                        {isCollapsed && <span className="sidebar-tooltip">User Profile</span>}
                     </div>
                     <button
                         onClick={handleLogout}
                         className="btn-icon-logout"
-                        title="Logout"
                         style={{
                             background: 'transparent',
                             border: 'none',
@@ -228,6 +228,7 @@ const MainLayout = () => {
                         onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
                     >
                         <LogOut size={18} />
+                        {isCollapsed && <span className="sidebar-tooltip">Logout</span>}
                     </button>
                 </div>
             </aside>
