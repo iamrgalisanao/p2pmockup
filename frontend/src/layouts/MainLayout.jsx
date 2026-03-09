@@ -56,11 +56,10 @@ const MainLayout = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
-    // Fetch dynamic stats for notification counts (Industry Standard)
     const { data: stats } = useQuery({
         queryKey: ['dashboard-stats'],
         queryFn: () => api.get('dashboard/stats').then(res => res.data),
-        refetchInterval: 30000, // Refresh every 30 seconds for live feel
+        refetchInterval: 30000,
     });
 
     const inboxCount = stats?.inbox_count || 0;
@@ -88,10 +87,8 @@ const MainLayout = () => {
         <div className={`app-wrapper ${isMobileMenuOpen ? 'mobile-menu-open' : ''}`}>
             <div className={`mobile-overlay ${isMobileMenuOpen ? 'show' : ''}`} onClick={() => setIsMobileMenuOpen(false)}></div>
             <aside className={`sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-                <div className="sidebar-header" style={{ marginBottom: '2.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>
-                    <div style={{
-                        display: 'flex', alignItems: 'center', gap: '8px'
-                    }}>
+                <div className="sidebar-header" style={{ marginBottom: '3.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem', position: 'relative' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <div style={{
                             background: '#EB342E',
                             color: 'white',
@@ -102,41 +99,41 @@ const MainLayout = () => {
                         }}>PITX</div>
                         {!isCollapsed && <span style={{ fontWeight: 800, fontSize: '1.1rem', letterSpacing: '-0.5px', color: 'white', whiteSpace: 'nowrap' }}>P2P PROCUREMENT</span>}
                     </div>
-
-                    <button
-                        className="sidebar-collapse-btn"
-                        onClick={() => setIsCollapsed(!isCollapsed)}
-                        style={{
-                            position: 'absolute',
-                            right: isCollapsed ? '-1rem' : '-1.5rem',
-                            top: '70%',
-                            transform: 'translateY(-50%)',
-                            width: '24px',
-                            height: '48px',
-                            borderRadius: '8px 0 0 8px',
-                            background: 'white',
-                            color: 'var(--text-muted)',
-                            border: '1px solid var(--border)',
-                            borderRight: 'none',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 1010,
-                            transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.color = 'var(--primary)';
-                            e.currentTarget.style.background = '#f8fafc';
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.color = 'var(--text-muted)';
-                            e.currentTarget.style.background = 'white';
-                        }}
-                    >
-                        {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-                    </button>
                 </div>
+
+                <button
+                    className="sidebar-collapse-btn"
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    style={{
+                        position: 'absolute',
+                        right: '0',
+                        top: '98px',
+                        transform: 'translateY(-50%)',
+                        width: '32px',
+                        height: '38px',
+                        borderRadius: '4px 0 0 4px',
+                        background: 'white',
+                        color: 'var(--text-muted)',
+                        border: '1px solid var(--border)',
+                        borderRight: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 1010,
+                        transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.color = 'var(--primary)';
+                        e.currentTarget.style.background = '#f8fafc';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.color = 'var(--text-muted)';
+                        e.currentTarget.style.background = 'white';
+                    }}
+                >
+                    {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                </button>
 
                 <nav style={{ flex: 1 }}>
                     {navItems.map((item) => {

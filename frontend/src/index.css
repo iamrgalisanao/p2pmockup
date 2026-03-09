@@ -237,6 +237,13 @@ h6 {
   z-index: 950;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
   box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05);
+  overflow: visible;
+  /* Allow button to stick out */
+}
+
+/* Add a wrapper for navigation if scrolling is needed */
+.sidebar nav {
+  overflow-y: auto;
   overflow-x: hidden;
 }
 

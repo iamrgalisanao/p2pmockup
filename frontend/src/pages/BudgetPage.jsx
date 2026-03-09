@@ -11,10 +11,12 @@ import {
     ArrowLeftRight,
     ChevronLeft,
     PieChart,
-    Layers,
     Activity,
     X,
-    CheckCircle2
+    CheckCircle2,
+    LayoutGrid,
+    List,
+    Layers
 } from 'lucide-react';
 import budgetService from '../services/budgetService';
 import { toast } from 'react-hot-toast';
@@ -189,6 +191,7 @@ const BudgetActionModal = ({ isOpen, onClose, onSuccess, initialType = 'departme
 
 const BudgetPage = () => {
     const [view, setView] = useState('summary'); // summary | ledger
+    const [summaryViewMode, setSummaryViewMode] = useState('cards'); // cards | list
     const [budgetType, setBudgetType] = useState('department'); // department | project
     const [data, setData] = useState([]);
     const [selectedDept, setSelectedDept] = useState(null);
@@ -330,73 +333,163 @@ const BudgetPage = () => {
                                 style={{ paddingLeft: '48px', borderRadius: '12px', background: 'var(--bg-main)' }}
                             />
                         </div>
+                        <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--bg-card)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                            <button
+                                onClick={() => setSummaryViewMode('cards')}
+                                className={`btn ${summaryViewMode === 'cards' ? 'btn-primary' : 'btn-outline'}`}
+                                style={{ padding: '0.5rem', borderRadius: '8px', border: 'none', minWidth: '40px', display: 'flex', justifyContent: 'center' }}
+                                title="Card View"
+                            >
+                                <LayoutGrid size={18} />
+                            </button>
+                            <button
+                                onClick={() => setSummaryViewMode('list')}
+                                className={`btn ${summaryViewMode === 'list' ? 'btn-primary' : 'btn-outline'}`}
+                                style={{ padding: '0.5rem', borderRadius: '8px', border: 'none', minWidth: '40px', display: 'flex', justifyContent: 'center' }}
+                                title="List View"
+                            >
+                                <List size={18} />
+                            </button>
+                        </div>
                         <button className="btn btn-outline" style={{ borderRadius: '12px' }}>
                             <Layers size={18} />
                             <span className="desktop-only">Group By Category</span>
                         </button>
                     </div>
 
-                    {/* Budget Cards Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2rem' }}>
-                        {filteredData.map((item, idx) => (
-                            <div
-                                key={item.id}
-                                className="glass-card animate-slide-up"
-                                style={{ padding: '2rem', cursor: 'pointer', animationDelay: `${idx * 0.05}s` }}
-                                onClick={() => handleSelectDept(item)}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
-                                    <div style={{ flex: 1 }}>
-                                        <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{item.name}</h3>
-                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID: {item.id.split('-')[0]}</div>
+                    {/* Budget Display Area */}
+                    {summaryViewMode === 'cards' ? (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '2rem' }}>
+                            {filteredData.map((item, idx) => (
+                                <div
+                                    key={item.id}
+                                    className="glass-card animate-slide-up"
+                                    style={{ padding: '2rem', cursor: 'pointer', animationDelay: `${idx * 0.05}s` }}
+                                    onClick={() => handleSelectDept(item)}
+                                >
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+                                        <div style={{ flex: 1 }}>
+                                            <h3 style={{ fontSize: '1.125rem', fontWeight: 800 }}>{item.name}</h3>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>ID: {item.id.split('-')[0]}</div>
+                                        </div>
+                                        <div className="budget-card-utilization" style={{
+                                            background: item.utilization_rate > 90 ? 'rgba(235, 52, 46, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                                            color: item.utilization_rate > 90 ? 'var(--accent)' : 'var(--success)'
+                                        }}>
+                                            {item.utilization_rate}%
+                                        </div>
                                     </div>
-                                    <div className="budget-card-utilization" style={{
-                                        background: item.utilization_rate > 90 ? 'rgba(235, 52, 46, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                                        color: item.utilization_rate > 90 ? 'var(--accent)' : 'var(--success)'
-                                    }}>
-                                        {item.utilization_rate}%
-                                    </div>
-                                </div>
 
-                                <div className="budget-progress-bg" style={{ marginBottom: '1.5rem' }}>
-                                    <div
-                                        className={`budget-progress-bar ${item.utilization_rate > 90 ? 'gradient-danger' :
-                                            item.utilization_rate > 70 ? 'gradient-warning' :
-                                                'gradient-safe'
-                                            }`}
-                                        style={{ width: `${Math.min(item.utilization_rate, 100)}%` }}
-                                    ></div>
-                                </div>
+                                    <div className="budget-progress-bg" style={{ marginBottom: '1.5rem' }}>
+                                        <div
+                                            className={`budget-progress-bar ${item.utilization_rate > 90 ? 'gradient-danger' :
+                                                item.utilization_rate > 70 ? 'gradient-warning' :
+                                                    'gradient-safe'
+                                                }`}
+                                            style={{ width: `${Math.min(item.utilization_rate, 100)}%` }}
+                                        ></div>
+                                    </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                                    <div>
-                                        <div className="budget-card-stat-label text-success" style={{ color: 'var(--success)' }}>Available</div>
-                                        <div className="budget-card-stat-value">₱{(parseFloat(item.available) || 0).toLocaleString()}</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                                        <div>
+                                            <div className="budget-card-stat-label text-success" style={{ color: 'var(--success)' }}>Available</div>
+                                            <div className="budget-card-stat-value">₱{(parseFloat(item.available) || 0).toLocaleString()}</div>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <div className="budget-card-stat-label">Total Limit</div>
+                                            <div className="budget-card-stat-value">₱{(parseFloat(item.budget_limit) || 0).toLocaleString()}</div>
+                                        </div>
                                     </div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div className="budget-card-stat-label">Total Limit</div>
-                                        <div className="budget-card-stat-value">₱{(parseFloat(item.budget_limit) || 0).toLocaleString()}</div>
-                                    </div>
-                                </div>
 
-                                <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div
-                                        onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
-                                        style={{ color: 'var(--success)', fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
-                                    >
-                                        ALLOCATE <ArrowUpRight size={14} />
-                                    </div>
-                                    <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                        LEDGER <History size={14} />
+                                    <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div
+                                            onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
+                                            style={{ color: 'var(--success)', fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}
+                                        >
+                                            ALLOCATE <ArrowUpRight size={14} />
+                                        </div>
+                                        <div style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                            LEDGER <History size={14} />
+                                        </div>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="glass-card animate-slide-up" style={{ padding: '0', overflow: 'hidden' }}>
+                            <div className="table-container" style={{ border: 'none', borderRadius: '0' }}>
+                                <table style={{ width: '100%' }}>
+                                    <thead style={{ background: 'var(--bg-main)' }}>
+                                        <tr>
+                                            <th style={{ paddingLeft: '2rem' }}>Department / Project</th>
+                                            <th>Utilization</th>
+                                            <th style={{ textAlign: 'right' }}>Available</th>
+                                            <th style={{ textAlign: 'right' }}>Total Limit</th>
+                                            <th style={{ textAlign: 'right', paddingRight: '2rem' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {filteredData.map((item) => (
+                                            <tr key={item.id} style={{ cursor: 'pointer' }} onClick={() => handleSelectDept(item)}>
+                                                <td style={{ paddingLeft: '2rem' }}>
+                                                    <div style={{ fontWeight: 800 }}>{item.name}</div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>ID: {item.id.split('-')[0]}</div>
+                                                </td>
+                                                <td>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                        <div className="budget-progress-bg" style={{ width: '100px', marginBottom: 0 }}>
+                                                            <div
+                                                                className={`budget-progress-bar ${item.utilization_rate > 90 ? 'gradient-danger' :
+                                                                    item.utilization_rate > 70 ? 'gradient-warning' :
+                                                                        'gradient-safe'
+                                                                    }`}
+                                                                style={{ width: `${Math.min(item.utilization_rate, 100)}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        <span style={{
+                                                            fontWeight: 800,
+                                                            fontSize: '0.875rem',
+                                                            color: item.utilization_rate > 90 ? 'var(--accent)' :
+                                                                item.utilization_rate > 70 ? 'var(--warning)' :
+                                                                    'var(--success)'
+                                                        }}>
+                                                            {item.utilization_rate}%
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--success)' }}>
+                                                    ₱{(parseFloat(item.available) || 0).toLocaleString()}
+                                                </td>
+                                                <td style={{ textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                                    ₱{(parseFloat(item.budget_limit) || 0).toLocaleString()}
+                                                </td>
+                                                <td style={{ textAlign: 'right', paddingRight: '2rem' }}>
+                                                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                                                        <button
+                                                            className="btn-text"
+                                                            style={{ color: 'var(--success)', fontWeight: 800, fontSize: '0.75rem' }}
+                                                            onClick={(e) => { e.stopPropagation(); setIsModalOpen(true); }}
+                                                        >
+                                                            ALLOCATE
+                                                        </button>
+                                                        <button
+                                                            className="btn-text"
+                                                            style={{ color: 'var(--primary)', fontWeight: 800, fontSize: '0.75rem' }}
+                                                        >
+                                                            LEDGER
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    )}
                 </>
             ) : (
                 <div className="animate-slide-up">
-                    {/* Detailed Ledger Component */}
                     <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between' }}>
                         <button className="btn btn-outline" onClick={() => setView('summary')} style={{ borderRadius: '8px', padding: '8px 16px' }}>
                             <ChevronLeft size={18} /> BACK TO OVERVIEW
@@ -478,7 +571,7 @@ const BudgetPage = () => {
                 initialType={budgetType}
                 departments={data}
             />
-        </div>
+        </div >
     );
 };
 
