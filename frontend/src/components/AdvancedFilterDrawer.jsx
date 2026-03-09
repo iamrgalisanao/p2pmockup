@@ -16,7 +16,7 @@ const AdvancedFilterDrawer = ({ isOpen, onClose, onApply, filters, setFilters, c
             inset: 0,
             background: 'rgba(0,0,0,0.4)',
             backdropFilter: 'blur(4px)',
-            zIndex: 1000,
+            zIndex: 1100,
             display: 'flex',
             justifyContent: 'flex-end'
         }}>

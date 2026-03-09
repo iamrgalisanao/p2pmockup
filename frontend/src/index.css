@@ -234,8 +234,9 @@ h6 {
   flex-direction: column;
   position: fixed;
   height: 100vh;
-  z-index: 100;
+  z-index: 950;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s ease;
+  box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05);
   overflow-x: hidden;
 }
 
@@ -339,38 +340,64 @@ h6 {
   pointer-events: auto;
 }
 
+.main-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 0;
+  margin-bottom: 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  background: transparent;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 100%;
+}
+
+.main-header.scrolled {
+  padding: 0.75rem 1.5rem;
+  margin: 0.5rem auto 2.5rem;
+  width: calc(100% - 1rem);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.05),
+    0 4px 6px -4px rgba(0, 0, 0, 0.05),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .main-header.scrolled {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+}
+
 .header-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.25rem 0;
-  margin-bottom: 2rem;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: transparent;
-  transition: all 0.3s ease;
-}
-
-.header-top.scrolled {
-  padding: 0.75rem 1.5rem;
-  margin: 0 -1.5rem 2rem;
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border);
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+  padding: 1rem 0;
+  margin-bottom: 1.5rem;
+  position: relative;
+  z-index: 10;
 }
 
 .search-bar input {
-  background: rgba(255, 255, 255, 0.03) !important;
-  border-color: var(--border) !important;
-  backdrop-filter: blur(4px);
+  background: var(--bg-input) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 12px !important;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
 .search-bar input:focus {
-  background: rgba(255, 255, 255, 0.07) !important;
+  background: var(--bg-card) !important;
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 4px var(--primary-glow);
+  box-shadow: 0 0 0 4px var(--primary-glow), 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
 }
 
 body.light-mode .search-bar input {

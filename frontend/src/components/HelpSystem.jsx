@@ -127,7 +127,7 @@ const HelpSystem = ({ isOpen, onClose }) => {
                     inset: 0;
                     background: rgba(0,0,0,0.4);
                     backdrop-filter: blur(4px);
-                    z-index: 1000;
+                    z-index: 1100;
                     display: flex;
                     justify-content: flex-end;
                 }

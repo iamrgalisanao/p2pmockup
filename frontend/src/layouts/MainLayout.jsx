@@ -122,7 +122,7 @@ const MainLayout = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            zIndex: 101,
+                            zIndex: 1010,
                             transition: 'all 0.2s ease'
                         }}
                         onMouseEnter={(e) => {
@@ -236,7 +236,7 @@ const MainLayout = () => {
             </aside>
 
             <main className={`main-content ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
-                <header className={`header-top ${isScrolled ? 'scrolled' : ''}`}>
+                <header className={`main-header ${isScrolled ? 'scrolled' : ''}`}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <button
                             className="mobile-menu-toggle"
@@ -252,12 +252,12 @@ const MainLayout = () => {
                             <PlusCircle size={24} style={{ transform: 'rotate(45deg)' }} />
                         </button>
 
-                        <div className="search-bar" style={{ position: 'relative', width: '320px', transition: 'width 0.3s ease' }}>
-                            <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 10 }} />
+                        <div className="search-bar" style={{ position: 'relative', width: '320px', transition: 'all 0.3s ease' }}>
+                            <Search size={16} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', zIndex: 10 }} />
                             <input
                                 type="text"
-                                placeholder="Search..."
-                                style={{ paddingLeft: '40px' }}
+                                placeholder="Global Search..."
+                                style={{ paddingLeft: '42px', borderRadius: '12px' }}
                             />
                         </div>
                     </div>
