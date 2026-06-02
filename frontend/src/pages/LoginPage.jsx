@@ -130,7 +130,7 @@ const LoginPage = () => {
             </div>
 
             <div style={{ position: 'absolute', bottom: '2rem', display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', fontWeight: 600 }}>
-                <Lock size={14} /> PROTECTED BY PITX SECURITY PROTOCOLS
+                <Lock size={14} /> POWERED BY ABBADEV
             </div>
         </div>
     );
